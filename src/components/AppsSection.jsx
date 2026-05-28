@@ -6,6 +6,7 @@ import SectionHeading from "./SectionHeading.jsx";
 function AppCard({ app, index }) {
   const isSoon = app.status === "Próximamente";
   const showVocalNote = app.slug === "vocal-warmup";
+  const hasStoreUrl = Boolean(app.appStoreUrl);
 
   return (
     <motion.article
@@ -79,15 +80,21 @@ function AppCard({ app, index }) {
       </div>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <a
-          className="glow-button justify-center"
-          href={app.appStoreUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Comprar en App Store
-          <Icons.ExternalLink className="h-4 w-4" />
-        </a>
+        {hasStoreUrl ? (
+          <a
+            className="glow-button justify-center"
+            href={app.appStoreUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Comprar en App Store
+            <Icons.ExternalLink className="h-4 w-4" />
+          </a>
+        ) : (
+          <span className="disabled-button justify-center">
+            Próximamente en App Store
+          </span>
+        )}
         <a className="ghost-button justify-center" href="#experiencia">
           Más información
           <Icons.ArrowRight className="h-4 w-4" />

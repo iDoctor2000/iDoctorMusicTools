@@ -61,11 +61,9 @@ export default function Hero() {
             <a
               className="ghost-button ghost-button-lg"
               href={APP_STORE_PORTFOLIO_URL}
-              target="_blank"
-              rel="noreferrer"
             >
-              Ver en App Store
-              <Icons.ExternalLink className="h-5 w-5" />
+              Ver apps disponibles
+              <Icons.ArrowRight className="h-5 w-5" />
             </a>
           </div>
           <div className="mt-10 flex flex-wrap gap-3 text-sm font-semibold text-slate-300">

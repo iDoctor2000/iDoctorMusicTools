@@ -65,11 +65,9 @@ export default function Header() {
           <a
             className="glow-button glow-button-sm"
             href={APP_STORE_PORTFOLIO_URL}
-            target="_blank"
-            rel="noreferrer"
           >
-            App Store
-            <Icons.ExternalLink className="h-4 w-4" />
+            Apps disponibles
+            <Icons.ArrowRight className="h-4 w-4" />
           </a>
         </div>
 
@@ -104,12 +102,10 @@ export default function Header() {
             <a
               className="glow-button mt-2 justify-center"
               href={APP_STORE_PORTFOLIO_URL}
-              target="_blank"
-              rel="noreferrer"
               onClick={() => setOpen(false)}
             >
-              Ver en App Store
-              <Icons.ExternalLink className="h-4 w-4" />
+              Apps disponibles
+              <Icons.ArrowRight className="h-4 w-4" />
             </a>
           </div>
         </motion.div>

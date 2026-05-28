@@ -28,11 +28,9 @@ export default function FinalCta() {
             <a
               className="glow-button glow-button-lg justify-center"
               href={APP_STORE_PORTFOLIO_URL}
-              target="_blank"
-              rel="noreferrer"
             >
-              Ver apps en App Store
-              <Icons.ExternalLink className="h-5 w-5" />
+              Ver apps disponibles
+              <Icons.ArrowRight className="h-5 w-5" />
             </a>
             <a className="ghost-button ghost-button-lg justify-center" href="#apps">
               Explorar el portfolio

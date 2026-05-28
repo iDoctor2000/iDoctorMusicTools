@@ -1,9 +1,8 @@
 export const APP_STORE_PORTFOLIO_URL =
-  "https://apps.apple.com/developer/idXXXXXXXXX";
+  "#apps";
 
 export const BRAND_SLOGAN = "Tu Doctor musical";
 
-// Cambia estos placeholders por los IDs reales cuando publiques cada app.
 export const apps = [
   {
     slug: "tuner",
@@ -23,7 +22,7 @@ export const apps = [
     ],
     audience:
       "Guitarristas, bajistas, cantantes, profesores, músicos de directo y estudiantes.",
-    appStoreUrl: "https://apps.apple.com/app/idXXXXXXXXX",
+    appStoreUrl: "https://apps.apple.com/us/app/idoctor-tunerpro/id6770253477",
     screenshot: "/screenshots/tuner-1.png",
     icon: "Gauge",
     accent: "cyan",
@@ -48,7 +47,8 @@ export const apps = [
     ],
     audience:
       "Bateristas, guitarristas, bajistas, pianistas, profesores, estudiantes y bandas.",
-    appStoreUrl: "https://apps.apple.com/app/idXXXXXXXXX",
+    appStoreUrl:
+      "https://apps.apple.com/us/app/idoctor-metronome-pro/id6772919575",
     screenshot: "/screenshots/metronome-1.png",
     icon: "Timer",
     accent: "violet",
@@ -71,7 +71,7 @@ export const apps = [
     ],
     audience:
       "Guitarristas, cantantes, compositores, profesores y músicos de versiones.",
-    appStoreUrl: "https://apps.apple.com/app/idXXXXXXXXX",
+    appStoreUrl: "https://apps.apple.com/us/app/idoctor-capo-pro/id6771513138",
     screenshot: "/screenshots/capo-1.png",
     icon: "Guitar",
     accent: "sky",
@@ -95,7 +95,7 @@ export const apps = [
     ],
     audience:
       "Bandas, grupos de versiones, orquestas, músicos de directo y directores musicales.",
-    appStoreUrl: "https://apps.apple.com/app/idXXXXXXXXX",
+    appStoreUrl: null,
     screenshot: "/screenshots/musicband-1.png",
     icon: "ListMusic",
     accent: "magenta",
@@ -120,7 +120,7 @@ export const apps = [
     ],
     audience:
       "Cantantes, coristas, profesores de canto, guitarristas que cantan y músicos que quieren adaptar canciones a su voz.",
-    appStoreUrl: "https://apps.apple.com/app/idXXXXXXXXX",
+    appStoreUrl: null,
     screenshot: "/screenshots/vocal-1.png",
     icon: "MicVocal",
     accent: "violet",

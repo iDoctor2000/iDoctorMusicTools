@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { APP_STORE_PORTFOLIO_URL } from "../data/apps.js";
+import { APP_STORE_PORTFOLIO_URL, BRAND_SLOGAN } from "../data/apps.js";
 import { Icons } from "./icons.jsx";
 
 const navLinks = [
@@ -39,8 +39,13 @@ export default function Header() {
             <Icons.Orbit className="h-5 w-5 transition-transform duration-500 group-hover:rotate-45" />
             <span className="absolute inset-1 rounded-2xl border border-violet-400/20" />
           </span>
-          <span className="font-display text-sm font-bold tracking-wide text-white sm:text-base">
-            iDoctor Music Tools
+          <span className="leading-tight">
+            <span className="block font-display text-sm font-bold tracking-wide text-white sm:text-base">
+              iDoctor Music Tools
+            </span>
+            <span className="hidden text-[11px] font-semibold text-neon-cyan/85 sm:block">
+              {BRAND_SLOGAN}
+            </span>
           </span>
         </a>
 

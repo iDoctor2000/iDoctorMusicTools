@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { APP_STORE_PORTFOLIO_URL } from "../data/apps.js";
+import { APP_STORE_PORTFOLIO_URL, BRAND_SLOGAN } from "../data/apps.js";
 import { DynamicIcon, Icons } from "./icons.jsx";
 import { publicUrl } from "../utils/publicUrl.js";
 
@@ -38,6 +38,9 @@ export default function Hero() {
             <Icons.Sparkles className="h-4 w-4" />
             Una constelación de herramientas para músicos
           </div>
+          <p className="mb-4 font-orbitron text-sm font-bold text-neon-magenta sm:text-base">
+            {BRAND_SLOGAN}
+          </p>
           <h1 className="max-w-5xl font-display text-5xl font-black leading-[0.92] tracking-normal text-white sm:text-7xl lg:text-8xl">
             iDoctor Music Tools
           </h1>

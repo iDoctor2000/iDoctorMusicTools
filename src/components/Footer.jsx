@@ -1,4 +1,4 @@
-import { APP_STORE_PORTFOLIO_URL } from "../data/apps.js";
+import { APP_STORE_PORTFOLIO_URL, BRAND_SLOGAN } from "../data/apps.js";
 import { Icons } from "./icons.jsx";
 import { publicUrl } from "../utils/publicUrl.js";
 
@@ -23,7 +23,8 @@ export default function Footer() {
             </p>
           </div>
           <p className="mt-3 max-w-md text-sm leading-6 text-slate-400">
-            Apps musicales diseñadas para músicos, cantantes y bandas.
+            {BRAND_SLOGAN}. Apps musicales diseñadas para músicos, cantantes y
+            bandas.
           </p>
         </div>
 

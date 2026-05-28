@@ -5,6 +5,7 @@ import SectionHeading from "./SectionHeading.jsx";
 
 function AppCard({ app, index }) {
   const isSoon = app.status === "Próximamente";
+  const showVocalNote = app.slug === "vocal-warmup";
 
   return (
     <motion.article
@@ -68,9 +69,9 @@ function AppCard({ app, index }) {
             Dirigido a
           </p>
           <p className="mt-4 text-base leading-8 text-slate-200">{app.audience}</p>
-          {isSoon && (
+          {showVocalNote && (
             <p className="mt-5 rounded-2xl border border-violet-300/25 bg-violet-300/10 px-4 py-3 text-sm leading-6 text-violet-100">
-              En desarrollo: se presentará como orientación vocal, no como
+              Próximamente: se presentará como orientación vocal, no como
               diagnóstico absoluto.
             </p>
           )}

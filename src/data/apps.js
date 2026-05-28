@@ -1,6 +1,8 @@
 export const APP_STORE_PORTFOLIO_URL =
   "https://apps.apple.com/developer/idXXXXXXXXX";
 
+export const BRAND_SLOGAN = "Tu Doctor musical";
+
 // Cambia estos placeholders por los IDs reales cuando publiques cada app.
 export const apps = [
   {
@@ -78,7 +80,7 @@ export const apps = [
     slug: "musicband",
     name: "iDoctor MusicBand",
     tagline: "El centro de mando de tu banda.",
-    status: "En desarrollo",
+    status: "Próximamente",
     description:
       "iDoctor MusicBand será una herramienta para grupos musicales que necesitan organizar repertorios, setlists, conciertos, ensayos y canciones. La app transmite la idea de control total del directo: canciones, orden, tempo, tonalidad, cejilla, notas, duración y preparación del concierto.",
     features: [
@@ -99,9 +101,9 @@ export const apps = [
     accent: "magenta",
   },
   {
-    slug: "vocal-range",
-    name: "iDoctor Vocal Range",
-    displayName: "iDoctor Vocal Range / Detectar mi voz",
+    slug: "vocal-warmup",
+    name: "iDoctor Vocal WarmUp",
+    displayName: "iDoctor Vocal WarmUp",
     tagline: "Descubre tu órbita vocal.",
     status: "Próximamente",
     description:
@@ -132,7 +134,6 @@ export const ecosystemPoints = [
   "Organizar repertorios y conciertos",
   "Preparar ensayos",
   "Ayudar a cantantes a encontrar su rango y tesitura",
-  "Integrar tecnología musical en directo",
 ];
 
 export const audiences = [
@@ -188,6 +189,6 @@ export const roadmap = [
   "iDoctor Metronome Pro",
   "iDoctor Capo Pro",
   "iDoctor MusicBand",
-  "iDoctor Vocal Range",
+  "iDoctor Vocal WarmUp",
   "Nuevas herramientas para músicos",
 ];

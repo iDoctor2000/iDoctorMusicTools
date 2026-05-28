@@ -4,9 +4,17 @@ Landing page premium para el portfolio iOS iDoctor Music Tools.
 
 ## Desarrollo
 
+No abras `index.html` directamente con `file://`. Es una app React/Vite y necesita servidor local.
+
 ```bash
 npm install
 npm run dev
+```
+
+Después abre la URL que muestre Vite, normalmente:
+
+```text
+http://127.0.0.1:5173/
 ```
 
 ## Producción

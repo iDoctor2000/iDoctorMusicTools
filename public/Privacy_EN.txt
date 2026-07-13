@@ -1,0 +1,125 @@
+Privacy Policy — iDoctor Music Tools
+Last updated: July 13, 2026
+
+1. Data controller
+
+The controller for these applications is:
+
+iDoctor Music Tools
+Developer: Juan A. Gómez Company
+Contact email: jagomezc@gmail.com
+
+For any question regarding this privacy policy, you can reach us at the email address above.
+⸻
+2. Personal data we collect
+
+iDoctor Music Tools applications are designed to work locally on the user's device.
+As a general rule:
+We do not collect personally identifiable data.
+We do not require user registration.
+We do not sell personal data.
+We do not share personal data with third parties for advertising purposes.
+We do not track users across third-party apps or websites.
+
+Apps may store locally on the device certain information needed for their operation, such as configuration preferences, musical settings, tempo, meter, tunings, transpositions, internal lists, usage parameters or similar settings.
+This information is kept on the device itself and is used solely to improve the user experience.
+⸻
+3. Locally stored data
+
+Some applications may store configuration data on the device, for example:
+* Tempo, meter or sound preferences.
+* Tuning settings.
+* Transposition settings.
+* Visual or functional preferences.
+* Musical data entered by the user.
+* Internal options needed to remember the app's state.
+
+This data remains on the user's device, unless the operating system or the user makes backups through external services such as iCloud or other Apple mechanisms.
+iDoctor Music Tools does not directly access those backups nor control Apple's processing of them.
+⸻
+4. Microphone use
+
+Some applications, such as those related to tuning or sound analysis, may request access to the device microphone.
+Microphone access is used exclusively for musical features, such as detecting the frequency of a note, helping tune an instrument or analyzing an audio signal in real time.
+Audio captured by the microphone is not recorded, stored or sent to external servers by iDoctor Music Tools, unless a future version expressly states otherwise and requests the corresponding consent.
+The user can grant or revoke microphone access at any time from the device privacy settings.
+⸻
+5. Purchases, subscriptions or payments
+
+If any application includes in-app purchases, subscriptions or paid features, those transactions are handled through Apple's official systems.
+iDoctor Music Tools has no direct access to the user's full payment data, such as bank card numbers or other complete financial data.
+Payments, billing, cancellations and refunds are managed under the conditions established by Apple.
+⸻
+6. Third-party services
+
+The applications may use services provided by Apple that are necessary for the normal operation of an iOS app, such as App Store distribution, in-app purchases, basic system analytics or Apple platform notifications, where applicable.
+
+Some applications include specific external services, always under the user's control:
+
+iCloud backup (iDoctor Beatbuddy Assistant): the app may store the user's analysis history in the private iCloud Drive container linked to their Apple ID, for the sole purpose of preserving it when switching devices or reinstalling the app. Only the user has access to that container; iDoctor Music Tools cannot see or process that data. Apple's processing is governed by Apple's own privacy policy.
+
+Artificial-intelligence features with the user's own key (iDoctor Beatbuddy Assistant): optionally, the user may enter their own Anthropic (Claude) API key to refine analyses. The key is stored exclusively in the device Keychain and is used only for direct, encrypted calls to api.anthropic.com. Those calls include only the musical analysis metrics (tempo, groove, meter) and the song's file name; the audio itself is never sent. Anthropic's processing of that data is governed by its privacy policy (https://www.anthropic.com/legal/privacy). If the user does not enter a key, the app makes no external connection at all.
+
+Should any application incorporate additional external services in the future, such as advanced analytics, cloud storage, sign-in, cross-device sync or error-diagnostics tools, this policy will be updated to clearly reflect it.
+⸻
+7. Advertising and tracking
+
+iDoctor Music Tools applications do not perform advertising tracking of the user across third-party apps or websites.
+Currently, the applications do not use advertising identifiers to build commercial profiles or to sell user information.
+If any application were to incorporate advertising or tracking technologies in the future, the user would be clearly informed and this privacy policy would be updated.
+⸻
+8. Purpose of processing
+
+Local information stored on the device is used to:
+
+* Allow the application to work correctly.
+* Remember the user's preferences.
+* Improve the user experience.
+* Keep the musical or technical settings chosen by the user.
+* Let the user keep using the app without reconfiguring it every time.
+
+We do not use this data to build personal profiles, send personalized advertising or perform external tracking.
+⸻
+9. Legal basis
+
+Where personal data processing exists, the legal basis may be:
+
+* The user's consent, for example when granting microphone access.
+* The performance of the relationship between the user and the application, where processing is necessary to provide the requested features.
+* The legitimate interest in maintaining the security, stability and correct operation of the application.
+⸻
+10. Data retention
+
+Locally stored configuration data is kept while the application remains installed on the device, or until the user deletes it, resets the settings or uninstalls the application.
+iDoctor Music Tools does not keep users' personal data on its own servers, unless a future version expressly states otherwise.
+⸻
+11. User rights
+
+Where applicable under current regulations, users may exercise their rights of access, rectification, erasure, objection, restriction of processing and portability.
+To exercise these rights or raise any privacy-related question, users can write to:
+jagomezc@gmail.com
+If a user believes the processing of their data does not comply with applicable regulations, they may contact the competent data protection authority.
+In Spain, the Spanish Data Protection Agency (AEPD) provides information on rights and personal data protection.
+⸻
+12. Minors
+
+iDoctor Music Tools applications are not specifically aimed at minors and do not knowingly collect personal data from minors.
+If a parent or guardian believes a minor has provided personal data through any application, they can contact us to review the situation and, where appropriate, request its deletion.
+⸻
+13. Security
+
+The applications are designed applying reasonable security and data-minimization measures.
+Since most data is stored locally on the device, security also depends on the measures adopted by the user, such as passcode, Face ID, Touch ID, operating system updates and secure backups.
+⸻
+14. Changes to this Privacy Policy
+
+iDoctor Music Tools may update this Privacy Policy to adapt it to technical, legal or functional changes in its applications.
+When relevant changes are made, the date at the top of this policy will be updated.
+We recommend reviewing this page periodically for the latest version.
+⸻
+15. Contact
+
+For any question about this Privacy Policy or about how iDoctor Music Tools applications work:
+
+iDoctor Music Tools
+Email: jagomezc@gmail.com

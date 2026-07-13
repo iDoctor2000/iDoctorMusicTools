@@ -1,3 +1,6 @@
+Política de privacidad — iDoctor Music Tools
+Última actualización: 13 de julio de 2026
+
 1. Responsable
 
 El responsable de estas aplicaciones es:
@@ -50,6 +53,12 @@ La gestión de pagos, facturación, cancelaciones y reembolsos se realiza confor
 6. Servicios de terceros
 
 Las aplicaciones pueden utilizar servicios proporcionados por Apple necesarios para el funcionamiento normal de una app iOS, como distribución a través de App Store, compras integradas, analítica básica del sistema o notificaciones del propio entorno Apple, si fueran aplicables.
+Algunas aplicaciones incorporan servicios externos concretos, siempre bajo control del usuario:
+
+Copia de seguridad en iCloud (iDoctor Beatbuddy Assistant): la app puede guardar el historial de análisis del usuario en el contenedor privado de iCloud Drive asociado a su Apple ID, con el único fin de conservarlo si cambia de dispositivo o reinstala la app. Solo el usuario tiene acceso a ese contenedor; iDoctor Music Tools no puede ver ni tratar esos datos. El tratamiento por parte de Apple se rige por su propia política de privacidad.
+
+Funciones de inteligencia artificial con clave propia (iDoctor Beatbuddy Assistant): de forma opcional, el usuario puede introducir su propia clave de la API de Anthropic (Claude) para refinar los análisis. La clave se almacena exclusivamente en el Keychain del dispositivo y se utiliza únicamente para llamadas directas y cifradas a api.anthropic.com. En esas llamadas se envían solo las métricas del análisis musical (tempo, groove, compás) y el nombre del archivo de la canción; el audio nunca se envía. El tratamiento de esos datos por Anthropic se rige por su política de privacidad (https://www.anthropic.com/legal/privacy). Si el usuario no introduce ninguna clave, la app no realiza conexión externa alguna.
+
 En caso de que en el futuro alguna aplicación incorpore servicios externos adicionales, como analítica avanzada, almacenamiento en la nube, inicio de sesión, sincronización entre dispositivos o herramientas de diagnóstico de errores, esta política será actualizada para reflejarlo con claridad.
 ⸻
 

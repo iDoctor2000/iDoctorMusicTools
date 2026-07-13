@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { apps } from "../data/apps.js";
 import { DynamicIcon, Icons } from "./icons.jsx";
 import SectionHeading from "./SectionHeading.jsx";
+import { publicUrl } from "../utils/publicUrl.js";
 
 function AppCard({ app, index }) {
   const isSoon = app.status === "Próximamente";
@@ -95,7 +96,7 @@ function AppCard({ app, index }) {
             {isSoon ? "Próximamente en App Store" : "Enlace App Store pendiente"}
           </span>
         )}
-        <a className="ghost-button justify-center" href="#experiencia">
+        <a className="ghost-button justify-center" href={publicUrl(`apps/${app.slug}/`)}>
           Más información
           <Icons.ArrowRight className="h-4 w-4" />
         </a>

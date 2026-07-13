@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_BASE: /${{ github.event.repository.name }}/
+      VITE_SITE_URL: https://idoctor2000.github.io/${{ github.event.repository.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

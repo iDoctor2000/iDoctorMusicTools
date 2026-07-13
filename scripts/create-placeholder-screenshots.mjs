@@ -7,8 +7,10 @@ const outputDir = resolve("public/screenshots");
 const shots = [
   { file: "tuner-1.png", accent: [34, 211, 238], secondary: [56, 189, 248] },
   { file: "metronome-1.png", accent: [139, 92, 246], secondary: [34, 211, 238] },
+  { file: "beatbuddy-1.png", accent: [245, 158, 11], secondary: [34, 211, 238] },
   { file: "capo-1.png", accent: [56, 189, 248], secondary: [217, 70, 239] },
   { file: "musicband-1.png", accent: [217, 70, 239], secondary: [34, 211, 238] },
+  { file: "livestems-1.png", accent: [34, 211, 238], secondary: [245, 158, 11] },
   { file: "vocal-1.png", accent: [139, 92, 246], secondary: [217, 70, 239] },
 ];
 

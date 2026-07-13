@@ -68,7 +68,7 @@ export default function Ecosystem() {
               </defs>
             </svg>
 
-            <div className="relative grid gap-4 sm:grid-cols-2 lg:min-h-[460px] lg:grid-cols-none">
+            <div className="relative grid gap-4 sm:grid-cols-2 lg:min-h-[560px] lg:grid-cols-none">
               {apps.map((app, index) => (
                 <div key={app.slug} className={`planet-module planet-${index + 1}`}>
                   <span className={`planet-icon accent-${app.accent}`}>

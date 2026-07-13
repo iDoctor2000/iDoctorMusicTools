@@ -54,6 +54,31 @@ export const apps = [
     accent: "violet",
   },
   {
+    slug: "beatbuddy-assistant",
+    name: "iDoctor Beatbuddy Assistant",
+    tagline: "El radar rítmico de tu BeatBuddy.",
+    status: "Disponible",
+    description:
+      "iDoctor Beatbuddy Assistant analiza cualquier canción y te dice exactamente qué patrón de tu pedal BeatBuddy 2 usar para tocarla en directo. Detecta el BPM, el groove y el compás en el propio iPhone en segundos, compara con los 267 patrones del catálogo del pedal y, si conectas tu clave de Claude, la IA afina la recomendación con criterio musical y consejos de directo. Se acabó probar patrones a ciegas en mitad del ensayo: eliges la canción, y el pedal ya sabe qué tocar.",
+    features: [
+      "Análisis de BPM, groove y feel en tu iPhone (sin servidores, sin esperas)",
+      "Detección de hi-hat en corcheas o semicorcheas, swing y compás ternario",
+      "Ranking de patrones del catálogo BeatBuddy 2 con puntuación explicada",
+      "Números MIDI exactos (MSB · LSB · PC) para marcar el patrón en el pedal",
+      "Refinado con IA (Claude) usando tu propia clave: género real y consejos para el directo",
+      "Re-análisis con IA sin volver a abrir el archivo de audio",
+      "Historial con búsqueda, ordenación y copia de seguridad automática en iCloud",
+      "Disponible en español, inglés, francés y alemán",
+      "Interfaz oscura profesional pensada para el escenario",
+    ],
+    audience:
+      "Músicos que tocan en directo con el pedal BeatBuddy: cantautores, dúos, one-man-bands y bandas sin batería.",
+    appStoreUrl: null,
+    screenshot: "/screenshots/beatbuddy-1.png",
+    icon: "Drum",
+    accent: "amber",
+  },
+  {
     slug: "capo",
     name: "iDoctor Capo Pro",
     tagline: "Transporta canciones como si movieras estrellas.",
@@ -101,6 +126,31 @@ export const apps = [
     accent: "magenta",
   },
   {
+    slug: "livestems",
+    name: "iDoctor Live Stems",
+    tagline: "El control de misión de tu directo.",
+    status: "Próximamente",
+    description:
+      "iDoctor Live Stems convierte tu iPad o iPhone en un reproductor multipista de escenario para bandas que tocan con backing tracks. Hasta 6 stems perfectamente sincronizados, mixer tipo consola y routing multicanal USB-C: el click y las órdenes a los in-ears de la banda, la base al público. Graba tus propias órdenes de voz sincronizadas con cada canción y edítalas en un editor de audio integrado.",
+    features: [
+      "Hasta 6 stems sincronizados al sample",
+      "Mixer tipo consola con faders, VU y salidas independientes",
+      "Routing multicanal real por USB-C (click solo a los in-ears)",
+      "Pista de órdenes grabada por ti, con editor de audio completo",
+      "Marcadores de sección, loop A-B y letra en pantalla",
+      "Tono y tempo en tiempo real, recordados por canción",
+      "Setlists, medleys encadenados y pedalera MIDI",
+      "Preflight: verifica stems, canales y batería antes de salir",
+      "Diseño oscuro de escenario, en iPad, iPhone y Mac",
+    ],
+    audience:
+      "Bandas con backing tracks, cantantes solistas con secuencias, grupos de versiones, teclistas-directores musicales y técnicos de directo.",
+    appStoreUrl: null,
+    screenshot: "/screenshots/livestems-1.png",
+    icon: "AudioLines",
+    accent: "cyan",
+  },
+  {
     slug: "vocal-warmup",
     name: "iDoctor Vocal WarmUp",
     displayName: "iDoctor Vocal WarmUp",
@@ -134,6 +184,7 @@ export const ecosystemPoints = [
   "Organizar repertorios y conciertos",
   "Preparar ensayos",
   "Ayudar a cantantes a encontrar su rango y tesitura",
+  "Tocar en directo con stems sincronizados y click a los in-ears",
 ];
 
 export const audiences = [
@@ -163,6 +214,11 @@ export const audiences = [
     text: "Setlists, ensayos y conciertos organizados desde un mismo panel.",
   },
   {
+    label: "Bandas con backing tracks",
+    icon: "AudioLines",
+    text: "Stems sincronizados, click a los in-ears y órdenes grabadas: el directo, bajo control.",
+  },
+  {
     label: "Profesores de música",
     icon: "GraduationCap",
     text: "Recursos directos para explicar afinación, tempo y tonalidad.",
@@ -189,6 +245,7 @@ export const roadmap = [
   "iDoctor Metronome Pro",
   "iDoctor Capo Pro",
   "iDoctor MusicBand",
+  "iDoctor Live Stems",
   "iDoctor Vocal WarmUp",
   "Nuevas herramientas para músicos",
 ];

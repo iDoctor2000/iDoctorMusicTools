@@ -24,8 +24,12 @@ export default function VisualExperience() {
           viewport={{ once: true, margin: "-110px" }}
           transition={{ duration: 0.75 }}
         >
-          {apps.map((app, index) => (
-            <DeviceMockup key={app.slug} app={app} size={index === 3 ? "tablet" : "phone"} />
+          {apps.map((app) => (
+            <DeviceMockup
+              key={app.slug}
+              app={app}
+              size={["musicband", "livestems"].includes(app.slug) ? "tablet" : "phone"}
+            />
           ))}
         </motion.div>
       </div>

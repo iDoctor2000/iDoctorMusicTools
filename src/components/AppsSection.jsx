@@ -92,7 +92,7 @@ function AppCard({ app, index }) {
           </a>
         ) : (
           <span className="disabled-button justify-center">
-            Próximamente en App Store
+            {isSoon ? "Próximamente en App Store" : "Enlace App Store pendiente"}
           </span>
         )}
         <a className="ghost-button justify-center" href="#experiencia">

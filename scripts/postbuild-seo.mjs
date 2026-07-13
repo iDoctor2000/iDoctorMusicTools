@@ -274,9 +274,7 @@ const urls = [
   { loc: absoluteUrl("Privacy.txt"), priority: "0.3" },
 ];
 
-await write(
-  "sitemap.xml",
-  `<?xml version="1.0" encoding="UTF-8"?>
+const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls
   .map(
@@ -289,6 +287,23 @@ ${urls
   )
   .join("\n")}
 </urlset>
+`;
+
+await write("sitemap.xml", sitemapXml);
+await write("google-sitemap.xml", sitemapXml);
+await write(
+  "sitemap-index.xml",
+  `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>${absoluteUrl("sitemap.xml")}</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>${absoluteUrl("google-sitemap.xml")}</loc>
+    <lastmod>${today}</lastmod>
+  </sitemap>
+</sitemapindex>
 `,
 );
 
@@ -298,6 +313,8 @@ await write(
 Allow: /
 
 Sitemap: ${absoluteUrl("sitemap.xml")}
+Sitemap: ${absoluteUrl("google-sitemap.xml")}
+Sitemap: ${absoluteUrl("sitemap-index.xml")}
 `,
 );
 

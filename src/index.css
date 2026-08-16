@@ -321,6 +321,28 @@ img {
     animation-delay: -0.62s;
   }
 
+
+  /* Capturas reales en la tarjeta de cada app (WebP, lazy). */
+  .screenshot-strip {
+    @apply flex shrink-0 gap-3 self-start;
+  }
+
+  .screenshot-thumb {
+    @apply block w-24 overflow-hidden rounded-xl border border-cyan-300/[0.22] bg-slate-950 shadow-glow transition sm:w-28;
+  }
+
+  .screenshot-thumb:hover {
+    @apply -translate-y-1 border-cyan-200/60;
+  }
+
+  .screenshot-thumb img {
+    @apply block h-auto w-full;
+  }
+
+  .device-screen img {
+    @apply block h-full w-full object-cover object-top;
+  }
+
   .feature-item {
     @apply flex gap-3 rounded-lg border border-white/[0.08] bg-space-black/[0.38] px-3 py-3 text-sm leading-6 text-slate-300;
   }

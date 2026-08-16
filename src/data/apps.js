@@ -1,11 +1,22 @@
-export const APP_STORE_PORTFOLIO_URL =
-  "#apps";
+// Página del desarrollador en la App Store (todas las apps juntas). Sin país
+// en la ruta: Apple redirige a la tienda de cada visitante.
+export const APP_STORE_DEVELOPER_URL =
+  "https://apps.apple.com/developer/id1617442259";
+
+// `appleId` es la clave que enlaza cada app con la App Store. Con él,
+// `npm run store` (scripts/fetch-store-meta.mjs) descarga precio, valoraciones
+// y capturas OFICIALES a src/data/store-meta.json, y `src/data/store.js` las
+// fusiona con lo de aquí. Regla: si una app tiene ficha en la tienda, la web
+// dice "Disponible" y enlaza — la web no vuelve a decir "Próximamente" de
+// algo que está a la venta.
+export const APP_STORE_PORTFOLIO_URL = APP_STORE_DEVELOPER_URL;
 
 export const BRAND_SLOGAN = "Tu Doctor musical";
 
 export const apps = [
   {
     slug: "tuner",
+    appleId: 6770253477,
     name: "iDoctor Tuner Pro",
     tagline: "Afinación precisa en un universo de frecuencias.",
     status: "Disponible",
@@ -22,13 +33,14 @@ export const apps = [
     ],
     audience:
       "Guitarristas, bajistas, cantantes, profesores, músicos de directo y estudiantes.",
-    appStoreUrl: "https://apps.apple.com/us/app/idoctor-tunerpro/id6770253477",
-    screenshot: "/screenshots/tuner-1.png",
+    appStoreUrl: "https://apps.apple.com/app/id6770253477",
+    screenshot: null, // capturas oficiales vía store-meta (npm run store)
     icon: "Gauge",
     accent: "cyan",
   },
   {
     slug: "metronome",
+    appleId: 6772919575,
     name: "iDoctor Metronome Pro",
     tagline: "El pulso de la galaxia, en la palma de tu mano.",
     status: "Disponible",
@@ -47,14 +59,14 @@ export const apps = [
     ],
     audience:
       "Bateristas, guitarristas, bajistas, pianistas, profesores, estudiantes y bandas.",
-    appStoreUrl:
-      "https://apps.apple.com/us/app/idoctor-metronome-pro/id6772919575",
-    screenshot: "/screenshots/metronome-1.png",
+    appStoreUrl: "https://apps.apple.com/app/id6772919575",
+    screenshot: null, // capturas oficiales vía store-meta (npm run store)
     icon: "Timer",
     accent: "violet",
   },
   {
     slug: "beatbuddy-assistant",
+    appleId: 6788465334,
     name: "iDoctor Beatbuddy Assistant",
     tagline: "El radar rítmico de tu BeatBuddy.",
     status: "Disponible",
@@ -73,13 +85,14 @@ export const apps = [
     ],
     audience:
       "Músicos que tocan en directo con el pedal BeatBuddy: cantautores, dúos, one-man-bands y bandas sin batería.",
-    appStoreUrl: null,
-    screenshot: "/screenshots/beatbuddy-1.png",
+    appStoreUrl: "https://apps.apple.com/app/id6788465334",
+    screenshot: null, // capturas oficiales vía store-meta (npm run store)
     icon: "Drum",
     accent: "amber",
   },
   {
     slug: "capo",
+    appleId: 6771513138,
     name: "iDoctor Capo Pro",
     tagline: "Transporta canciones como si movieras estrellas.",
     status: "Disponible",
@@ -96,8 +109,8 @@ export const apps = [
     ],
     audience:
       "Guitarristas, cantantes, compositores, profesores y músicos de versiones.",
-    appStoreUrl: "https://apps.apple.com/us/app/idoctor-capo-pro/id6771513138",
-    screenshot: "/screenshots/capo-1.png",
+    appStoreUrl: "https://apps.apple.com/app/id6771513138",
+    screenshot: null, // capturas oficiales vía store-meta (npm run store)
     icon: "Guitar",
     accent: "sky",
   },
@@ -121,15 +134,25 @@ export const apps = [
     audience:
       "Bandas, grupos de versiones, orquestas, músicos de directo y directores musicales.",
     appStoreUrl: null,
-    screenshot: "/screenshots/musicband-1.png",
+    screenshot: "/screenshots/musicband-1.webp",
+    // Capturas reales (App Store Connect, Lite) mientras la ficha no exista.
+    screenshots: [
+      "/screenshots/musicband-1.webp",
+      "/screenshots/musicband-2.webp",
+      "/screenshots/musicband-3.webp",
+      "/screenshots/musicband-4.webp",
+    ],
+    ogImage: "/screenshots/musicband-og.jpg",
+    iconImage: "/icons/musicband.png",
     icon: "ListMusic",
     accent: "magenta",
   },
   {
     slug: "livestems",
+    appleId: 6785842131,
     name: "iDoctor Live Stems",
     tagline: "El control de misión de tu directo.",
-    status: "Próximamente",
+    status: "Disponible",
     description:
       "iDoctor Live Stems convierte tu iPad o iPhone en un reproductor multipista de escenario para bandas que tocan con backing tracks. Hasta 6 stems perfectamente sincronizados, mixer tipo consola y routing multicanal USB-C: el click y las órdenes a los in-ears de la banda, la base al público. Graba tus propias órdenes de voz sincronizadas con cada canción y edítalas en un editor de audio integrado.",
     features: [
@@ -145,8 +168,8 @@ export const apps = [
     ],
     audience:
       "Bandas con backing tracks, cantantes solistas con secuencias, grupos de versiones, teclistas-directores musicales y técnicos de directo.",
-    appStoreUrl: null,
-    screenshot: "/screenshots/livestems-1.png",
+    appStoreUrl: "https://apps.apple.com/app/id6785842131",
+    screenshot: null, // capturas oficiales vía store-meta (npm run store)
     icon: "AudioLines",
     accent: "cyan",
   },

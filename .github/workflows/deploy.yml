@@ -1,4 +1,9 @@
-name: Deploy to GitHub Pages
+# GitHub Pages ya NO sirve la web: desde el 16-08-2026 vive en
+# https://idoctormusic.com (Firebase Hosting, `npm run deploy` desde local).
+# Este workflow publica en Pages un sitio de SOLO REDIRECCIÓN (canonical +
+# meta refresh + JS) para que las URLs antiguas idoctor2000.github.io/… sigan
+# funcionando y Google traspase la autoridad al dominio nuevo.
+name: Deploy redirect site to GitHub Pages
 
 on:
   push:
@@ -18,8 +23,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      VITE_BASE: /${{ github.event.repository.name }}/
-      VITE_SITE_URL: https://idoctor2000.github.io/${{ github.event.repository.name }}
+      REDIRECT_TARGET: https://idoctormusic.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,13 +32,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
+      - name: Build redirect site
+        run: node scripts/build-redirect-site.mjs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

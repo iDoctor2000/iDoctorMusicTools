@@ -1,40 +1,60 @@
-# iDoctor Music Tools
+# iDoctor Music Tools — web pública
 
-Landing page premium para el portfolio iOS iDoctor Music Tools.
+Escaparate del portfolio iOS **iDoctor Music Tools**, publicado en **https://idoctormusic.com**
+(Firebase Hosting, sitio `idoctormusic` del proyecto `idoctormusicband`). Bilingüe: `/` (es) y `/en/`.
+
+## Cómo funciona
+
+- **React + Vite + Tailwind** para la home (una SPA), con textos de interfaz en `src/i18n/index.js`.
+- **`src/data/apps.js`** — contenido en español y fuente de verdad (slugs, iconos, orden, `appleId`).
+- **`src/data/apps.en.js`** — textos en inglés (lo que falte cae al español).
+- **`src/data/store-meta.js`** — datos REALES de la App Store (precio, valoraciones, capturas oficiales,
+  icono). Lo genera `npm run store` (`scripts/fetch-store-meta.mjs`). No editar a mano.
+- **`src/data/catalog.js`** — fusiona los tres; lo usan la web y el generador SEO. Regla: si la app tiene
+  ficha en la tienda, se muestra "Disponible" y enlazada, diga lo que diga `status`.
+- **`scripts/postbuild-seo.mjs`** — tras el build de Vite genera todo lo indexable: home es/en con
+  cabecera SEO y contenido HTML real, una página estática por app y por idioma (`/apps/<slug>/`,
+  `/en/apps/<slug>/`) con precio, valoraciones, capturas y JSON-LD `SoftwareApplication`,
+  `/privacidad/`, `/soporte/` (+ `/en/privacy/`, `/en/support/`), `sitemap.xml` con hreflang, `robots.txt`,
+  `llms.txt` y la clave IndexNow.
 
 ## Desarrollo
 
-No abras `index.html` directamente con `file://`. Es una app React/Vite y necesita servidor local.
-
 ```bash
 npm install
-npm run dev
+npm run dev          # http://127.0.0.1:5173/
 ```
 
-Después abre la URL que muestre Vite, normalmente:
-
-```text
-http://127.0.0.1:5173/
-```
-
-## Producción
+## Publicar (Firebase Hosting → idoctormusic.com)
 
 ```bash
-npm run build
+npm run deploy       # = npm run store + build:site + firebase deploy --only hosting:tools
 ```
 
-## GitHub Pages
+Solo toca el sitio `idoctormusic`; el sitio `idoctormusicband` (Concierto Interactivo, manuales) no se ve afectado.
 
-El proyecto incluye `.github/workflows/deploy.yml`. Al subirlo a un repositorio con rama `main`, GitHub Actions construye `dist/` y lo publica en GitHub Pages.
+Vista previa temporal sin tocar producción:
 
-Si usas la URL gratuita de GitHub Pages, por ejemplo `usuario.github.io/nombre-del-repo`, deja `VITE_BASE` como está.
-
-Las imágenes de `public/assets` y `public/screenshots` ya se resuelven con la ruta base de Vite, así que funcionan tanto en GitHub Pages como en un dominio propio.
-
-Si conectas un dominio propio, cambia en `.github/workflows/deploy.yml`:
-
-```yaml
-VITE_BASE: /
+```bash
+npm run build:site && firebase hosting:channel:deploy preview --only tools --expires 2h
 ```
 
-Después configura el dominio en GitHub: `Settings > Pages > Custom domain`.
+Capturas de control de calidad (usa el Chrome del sistema):
+
+```bash
+npx vite preview --port 4173 &   # o cualquier URL
+node scripts/qa-screenshots.mjs http://127.0.0.1:4173 qa-shots
+```
+
+## GitHub Pages (solo redirección)
+
+`idoctor2000.github.io/iDoctorMusicTools/` ya no sirve la web: el workflow `.github/workflows/deploy.yml`
+publica un sitio de redirección (`scripts/build-redirect-site.mjs`) que manda cada URL antigua a su
+equivalente en `idoctormusic.com` con canonical + meta refresh + JS. `Privacy.txt` se mantiene íntegro allí
+por si alguna ficha de App Store Connect aún lo enlaza.
+
+## Cuando salga una app nueva
+
+1. Añádela en `src/data/apps.js` (y sus textos en `src/data/apps.en.js`).
+2. Cuando esté publicada, pon su `appleId` y ejecuta `npm run store` — precio, capturas e icono se descargan solos.
+3. `npm run deploy`.

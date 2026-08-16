@@ -1,38 +1,14 @@
 import { motion } from "framer-motion";
 import { Icons } from "./icons.jsx";
 import SectionHeading from "./SectionHeading.jsx";
-
-const blocks = [
-  {
-    title: "Diseñadas por músicos",
-    text: "Herramientas pensadas desde la experiencia real del ensayo, el escenario y la composición.",
-    icon: "Guitar",
-  },
-  {
-    title: "Precisión sin complicaciones",
-    text: "Apps directas, claras y útiles. Sin menús innecesarios. Abrir y tocar.",
-    icon: "SlidersHorizontal",
-  },
-  {
-    title: "Estética profesional",
-    text: "Diseño oscuro, visible, elegante y pensado para usarse en situaciones reales de práctica o directo.",
-    icon: "ShieldCheck",
-  },
-  {
-    title: "Un ecosistema en expansión",
-    text: "Cada app resuelve un problema concreto, pero todas forman parte de una visión común: ayudar al músico a tocar mejor, organizarse mejor y crear más.",
-    icon: "Orbit",
-  },
-];
+import { t } from "../i18n/index.js";
 
 export default function WhySection() {
+  const blocks = t.why.blocks;
   return (
     <section className="section-shell relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Por qué iDoctor Music Tools"
-          title="Tecnología musical al servicio de la inspiración"
-        />
+        <SectionHeading eyebrow={t.why.eyebrow} title={t.why.title} />
 
         <div className="mt-14 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {blocks.map((block, index) => {

@@ -1,15 +1,16 @@
 import { motion } from "framer-motion";
-import { audiences } from "../data/apps.js";
+import { getAudiences } from "../data/catalog.js";
+import { t, LANG } from "../i18n/index.js";
 import { DynamicIcon } from "./icons.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 
 export default function AudienceSection() {
+  const audiences = getAudiences(LANG);
   return (
     <section className="section-shell relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading eyebrow="Para quién es" title="Del ensayo al escenario">
-          El centro de mando musical de tu iPhone y iPad: herramientas claras
-          para perfiles reales, rutinas reales y música real.
+        <SectionHeading eyebrow={t.audience.eyebrow} title={t.audience.title}>
+          {t.audience.text}
         </SectionHeading>
 
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

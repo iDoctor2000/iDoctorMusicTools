@@ -1,0 +1,180 @@
+{
+  "tuner": {
+    "appleId": 6770253477,
+    "bundleId": "com.idoctor.tunerpro",
+    "storeName": "iDoctor TunerPro",
+    "url": "https://apps.apple.com/app/id6770253477",
+    "reviewUrl": "https://apps.apple.com/app/id6770253477?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 2.99,
+    "currency": "EUR",
+    "formattedPrice": "2,99 €",
+    "rating": 5,
+    "ratingCount": 1,
+    "version": "2.0",
+    "minimumOsVersion": "13.0",
+    "releaseDate": "2026-05-19",
+    "currentVersionReleaseDate": "2026-06-15",
+    "languages": [
+      "EN"
+    ],
+    "fileSizeBytes": 5354496,
+    "screenshots": [
+      "/screenshots/tuner-1.webp",
+      "/screenshots/tuner-2.webp",
+      "/screenshots/tuner-3.webp",
+      "/screenshots/tuner-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/tuner-ipad-1.webp",
+      "/screenshots/tuner-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/tuner-og.jpg",
+    "icon": "/icons/tuner.png",
+    "fetchedAt": "2026-08-16"
+  },
+  "metronome": {
+    "appleId": 6772919575,
+    "bundleId": "com.idoctor2000.iDoctorMetronomePro",
+    "storeName": "iDoctor Metronome Pro",
+    "url": "https://apps.apple.com/app/id6772919575",
+    "reviewUrl": "https://apps.apple.com/app/id6772919575?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 2.99,
+    "currency": "EUR",
+    "formattedPrice": "2,99 €",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "2.1",
+    "minimumOsVersion": "17.0",
+    "releaseDate": "2026-05-28",
+    "currentVersionReleaseDate": "2026-06-03",
+    "languages": [],
+    "fileSizeBytes": 4899840,
+    "screenshots": [
+      "/screenshots/metronome-1.webp",
+      "/screenshots/metronome-2.webp",
+      "/screenshots/metronome-3.webp",
+      "/screenshots/metronome-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/metronome-ipad-1.webp",
+      "/screenshots/metronome-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/metronome-og.jpg",
+    "icon": "/icons/metronome.png",
+    "fetchedAt": "2026-08-16"
+  },
+  "beatbuddy-assistant": {
+    "appleId": 6788465334,
+    "bundleId": "House.iDoctor-Beatbuddy-Assistant",
+    "storeName": "iDoctor Beatbuddy Assistant",
+    "url": "https://apps.apple.com/app/id6788465334",
+    "reviewUrl": "https://apps.apple.com/app/id6788465334?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 0.99,
+    "currency": "EUR",
+    "formattedPrice": "0,99 €",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "1.0",
+    "minimumOsVersion": "26.5",
+    "releaseDate": "2026-07-21",
+    "currentVersionReleaseDate": "2026-07-21",
+    "languages": [
+      "EN",
+      "FR",
+      "DE",
+      "ES"
+    ],
+    "fileSizeBytes": 1657856,
+    "screenshots": [
+      "/screenshots/beatbuddy-assistant-1.webp",
+      "/screenshots/beatbuddy-assistant-2.webp",
+      "/screenshots/beatbuddy-assistant-3.webp",
+      "/screenshots/beatbuddy-assistant-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/beatbuddy-assistant-ipad-1.webp",
+      "/screenshots/beatbuddy-assistant-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/beatbuddy-assistant-og.jpg",
+    "icon": "/icons/beatbuddy-assistant.png",
+    "fetchedAt": "2026-08-16"
+  },
+  "capo": {
+    "appleId": 6771513138,
+    "bundleId": "com.idoctor.CapoPro",
+    "storeName": "iDoctor Capo Pro",
+    "url": "https://apps.apple.com/app/id6771513138",
+    "reviewUrl": "https://apps.apple.com/app/id6771513138?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 2.99,
+    "currency": "EUR",
+    "formattedPrice": "2,99 €",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "1.0",
+    "minimumOsVersion": "17.0",
+    "releaseDate": "2026-05-28",
+    "currentVersionReleaseDate": "2026-05-28",
+    "languages": [
+      "AR",
+      "EN",
+      "HI",
+      "ZH",
+      "ES"
+    ],
+    "fileSizeBytes": 2004992,
+    "screenshots": [
+      "/screenshots/capo-1.webp",
+      "/screenshots/capo-2.webp",
+      "/screenshots/capo-3.webp",
+      "/screenshots/capo-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/capo-ipad-1.webp",
+      "/screenshots/capo-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/capo-og.jpg",
+    "icon": "/icons/capo.png",
+    "fetchedAt": "2026-08-16"
+  },
+  "livestems": {
+    "appleId": 6785842131,
+    "bundleId": "com.idoctor.livestems",
+    "storeName": "iDoctor Live Stems",
+    "url": "https://apps.apple.com/app/id6785842131",
+    "reviewUrl": "https://apps.apple.com/app/id6785842131?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 4.99,
+    "currency": "EUR",
+    "formattedPrice": "4,99 €",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "1.2",
+    "minimumOsVersion": "17.0",
+    "releaseDate": "2026-07-16",
+    "currentVersionReleaseDate": "2026-08-16",
+    "languages": [
+      "EN",
+      "FR",
+      "DE",
+      "ES"
+    ],
+    "fileSizeBytes": 8354816,
+    "screenshots": [
+      "/screenshots/livestems-1.webp",
+      "/screenshots/livestems-2.webp",
+      "/screenshots/livestems-3.webp",
+      "/screenshots/livestems-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/livestems-ipad-1.webp",
+      "/screenshots/livestems-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/livestems-og.jpg",
+    "icon": "/icons/livestems.png",
+    "fetchedAt": "2026-08-16"
+  }
+}

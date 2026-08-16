@@ -1,19 +1,17 @@
 import { motion } from "framer-motion";
-import { apps, ecosystemPoints } from "../data/apps.js";
+import { getApps, getEcosystemPoints } from "../data/catalog.js";
+import { t, LANG } from "../i18n/index.js";
 import { DynamicIcon, Icons } from "./icons.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 
 export default function Ecosystem() {
+  const apps = getApps(LANG);
+  const ecosystemPoints = getEcosystemPoints(LANG);
   return (
     <section id="ecosistema" className="section-shell relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="El ecosistema"
-          title="Una galaxia de herramientas para músicos reales"
-        >
-          iDoctor Music Tools no es una sola app: es un portfolio diseñado para
-          resolver problemas concretos del músico moderno. Cada app, una
-          herramienta. Todas juntas, un ecosistema.
+        <SectionHeading eyebrow={t.ecosystem.eyebrow} title={t.ecosystem.title}>
+          {t.ecosystem.text}
         </SectionHeading>
 
         <div className="mt-16 grid gap-8 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
@@ -70,7 +68,7 @@ export default function Ecosystem() {
 
             <div className="relative grid gap-4 sm:grid-cols-2 lg:min-h-[560px] lg:grid-cols-none">
               {apps.map((app, index) => (
-                <div key={app.slug} className={`planet-module planet-${index + 1}`}>
+                <a key={app.slug} href={app.pagePath} className={`planet-module planet-${index + 1}`}>
                   <span className={`planet-icon accent-${app.accent}`}>
                     <DynamicIcon name={app.icon} className="h-6 w-6" />
                   </span>
@@ -82,7 +80,7 @@ export default function Ecosystem() {
                       {app.tagline}
                     </p>
                   </div>
-                </div>
+                </a>
               ))}
             </div>
 
@@ -91,7 +89,7 @@ export default function Ecosystem() {
                 <div>
                   <Icons.Satellite className="mx-auto h-8 w-8 text-neon-cyan" />
                   <p className="mt-2 font-orbitron text-[10px] uppercase tracking-[0.24em] text-slate-300">
-                    Core
+                    {t.ecosystem.core}
                   </p>
                 </div>
               </div>

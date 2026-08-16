@@ -1,20 +1,24 @@
 import { useState } from "react";
 import { DynamicIcon } from "./icons.jsx";
 import { publicUrl } from "../utils/publicUrl.js";
+import { t } from "../i18n/index.js";
 
-export default function DeviceMockup({ app, size = "phone" }) {
+export default function DeviceMockup({ app }) {
   const [missingImage, setMissingImage] = useState(false);
-  const isTablet = size === "tablet";
 
   return (
-    <article className={isTablet ? "device-shell tablet-shell" : "device-shell"}>
+    <a href={app.pagePath} className="device-shell block">
       <div className="device-glass">
         <span className="device-speaker" />
         <div className="device-screen">
           {!missingImage && (
             <img
               src={publicUrl(app.screenshot)}
-              alt={`Captura de ${app.name}`}
+              alt={t.apps.screenshotAlt(app.name, 1)}
+              width={320}
+              height={693}
+              loading="lazy"
+              decoding="async"
               onError={() => setMissingImage(true)}
             />
           )}
@@ -28,12 +32,6 @@ export default function DeviceMockup({ app, size = "phone" }) {
                 <DynamicIcon name={app.icon} className="h-12 w-12 text-neon-cyan" />
                 <p>{app.name}</p>
               </div>
-              <div className="mini-wave" aria-hidden="true">
-                {Array.from({ length: 18 }, (_, index) => (
-                  <span key={index} style={{ "--i": index }} />
-                ))}
-              </div>
-              <p className="screen-path">{app.screenshot}</p>
             </div>
           )}
         </div>
@@ -42,6 +40,6 @@ export default function DeviceMockup({ app, size = "phone" }) {
         <p className="font-display text-lg font-bold text-white">{app.name}</p>
         <p className="mt-1 text-sm text-slate-400">{app.tagline}</p>
       </div>
-    </article>
+    </a>
   );
 }

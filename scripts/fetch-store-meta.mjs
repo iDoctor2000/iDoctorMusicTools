@@ -158,6 +158,26 @@ for (const r of results) {
 const missing = withId.filter((a) => !results.some((r) => String(r.trackId) === String(a.appleId)));
 for (const a of missing) console.warn(`  ! ${a.slug}: appleId ${a.appleId} no aparece en la App Store (${COUNTRY})`);
 
+// AVISO DE APPS OLVIDADAS (16-08-2026): la web decía "Próximamente" de
+// iDoctor Vocal WarmUp, publicada desde mayo, porque nadie le puso `appleId`.
+// La lista autoritativa es la ficha del DESARROLLADOR (el buscador de la App
+// Store es difuso y no la devolvía). Desde aquí se comprueba en cada `npm run
+// store` y se avisa de cualquier app publicada que falte en apps.js.
+const DEVELOPER_ID = 1617442259; // Juan Gomez Company
+try {
+  const res = await fetch(`https://itunes.apple.com/lookup?id=${DEVELOPER_ID}&entity=software&limit=100&country=${COUNTRY}`);
+  const all = (await res.json()).results.filter((r) => r.wrapperType === "software");
+  const known = new Set(apps.map((a) => String(a.appleId)));
+  const unknown = all.filter((r) => !known.has(String(r.trackId)) && /^iDoctor/i.test(r.trackName));
+  if (unknown.length) {
+    console.warn("\n  ⚠ Apps publicadas en la App Store que NO están en src/data/apps.js:");
+    for (const r of unknown) console.warn(`    · ${r.trackName} — appleId ${r.trackId} (${r.formattedPrice})`);
+    console.warn("    Añádelas (o su `appleId`) para que la web no las dé por inexistentes.\n");
+  }
+} catch {
+  console.warn("  (no se pudo comprobar la ficha del desarrollador)");
+}
+
 await writeFile(metaPath, JSON.stringify(meta, null, 2) + "\n");
 // Copia como módulo ES: la importan a la vez Vite (navegador) y Node
 // (postbuild-seo) sin depender de import attributes para JSON.

@@ -176,5 +176,37 @@
     "ogImage": "/screenshots/livestems-og.jpg",
     "icon": "/icons/livestems.png",
     "fetchedAt": "2026-08-16"
+  },
+  "vocal-warmup": {
+    "appleId": 6774223047,
+    "bundleId": "com.idoctor2000.iDoctorVocalWarmUp",
+    "storeName": "iDoctor Vocal WarmUp",
+    "url": "https://apps.apple.com/app/id6774223047",
+    "reviewUrl": "https://apps.apple.com/app/id6774223047?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 2.99,
+    "currency": "EUR",
+    "formattedPrice": "2,99 €",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "1.1",
+    "minimumOsVersion": "17.0",
+    "releaseDate": "2026-05-31",
+    "currentVersionReleaseDate": "2026-05-31",
+    "languages": [],
+    "fileSizeBytes": 3689472,
+    "screenshots": [
+      "/screenshots/vocal-warmup-1.webp",
+      "/screenshots/vocal-warmup-2.webp",
+      "/screenshots/vocal-warmup-3.webp",
+      "/screenshots/vocal-warmup-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/vocal-warmup-ipad-1.webp",
+      "/screenshots/vocal-warmup-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/vocal-warmup-og.jpg",
+    "icon": "/icons/vocal-warmup.png",
+    "fetchedAt": "2026-08-16"
   }
 }

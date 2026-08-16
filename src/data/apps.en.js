@@ -109,22 +109,22 @@ export const appsEn = {
       "Bands with backing tracks, solo singers with sequences, cover bands, keyboardist-musical directors and live sound techs.",
   },
   "vocal-warmup": {
-    tagline: "Discover your vocal orbit.",
+    tagline: "Warm up your voice before you sing, guided at the piano.",
     description:
-      "An upcoming tool for singers that will give an indicative reading of vocal range, comfort zone and probable voice type through guided notes and frequency analysis. It will always be presented as guidance, not as an absolute vocal diagnosis, because voice classification also depends on timbre, passaggio, power, age, training and technique.",
+      "Your voice needs warming up before you sing, just like your muscles before a run. iDoctor Vocal WarmUp guides your warm-up with piano and microphone, with exercises adapted to your range, in 5, 10 or 15 minutes. Pick your voice type or let the app estimate it with a two-note test, and watch your waveform on the built-in oscilloscope in real time: when the note is clean and steady, the wave holds still. No subscription, no ads, works offline.",
     features: [
-      "Guided vocal range test",
-      "Fundamental frequency detection",
-      "Reliable lowest note",
-      "Reliable highest note",
-      "Comfortable tessitura",
-      "Pitch stability",
-      "Indicative voice type",
-      "Tips for singing in a comfortable zone",
+      "Three guided routines: quick (5 min), full (10 min) and intensive (15 min)",
+      "Up to 8 classic exercises: sustained notes, scales, arpeggios, fifths and octaves",
+      "The piano rises by semitones, working your whole range progressively",
+      "Exercises adapted to your range: soprano, mezzo, contralto, tenor, baritone or bass",
+      "Two-note test that estimates your vocal profile as guidance",
+      "Real-time oscilloscope to train stability and pitch",
+      "No subscription, no ads, no in-app purchases",
+      "Works offline; the microphone is processed on your device only",
     ],
     audience:
-      "Singers, backing vocalists, voice teachers, guitarists who sing and musicians adapting songs to their voice.",
-    note: "Coming soon: it will be presented as vocal guidance, not as an absolute diagnosis.",
+      "Singers, backing vocalists, voice teachers, voice actors, presenters, guitarists who sing and anyone who uses their voice.",
+    note: "The voice-type estimate is guidance only: it does not replace the judgement of a singing teacher.",
   },
 };
 

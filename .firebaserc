@@ -1,0 +1,8 @@
+{
+  "projects": { "default": "idoctormusicband" },
+  "targets": {
+    "idoctormusicband": {
+      "hosting": { "tools": ["idoctormusic"] }
+    }
+  }
+}

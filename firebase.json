@@ -1,0 +1,8 @@
+{
+  "hosting": {
+    "target": "tools",
+    "public": "dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true
+  }
+}

@@ -5,3 +5,5 @@ node_modules/
 verification/
 .firebase/
 qa-shots/
+functions/node_modules/
+functions/*.log

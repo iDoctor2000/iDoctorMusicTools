@@ -58,3 +58,17 @@ por si alguna ficha de App Store Connect aún lo enlaza.
 1. Añádela en `src/data/apps.js` (y sus textos en `src/data/apps.en.js`).
 2. Cuando esté publicada, pon su `appleId` y ejecuta `npm run store` — precio, capturas e icono se descargan solos.
 3. `npm run deploy`.
+
+## Enlaces cortos de marca del Concierto Interactivo (`functions/`)
+
+Una Cloud Function (`shareLink`, europe-west1) sirve `idoctormusic.com/vota/<alias>`, `/en-vivo/<alias>`,
+`/pantalla/<alias>` y la tarjeta `/og-card/<tipo>/<alias>.jpg`. A los robots de vista previa (WhatsApp,
+Telegram, iMessage…) les da HTML con `og:*` (nombre y logo de la banda, leídos de
+`bands/{id}/publicLive/current`); a las personas las redirige (302) al enlace largo de siempre en
+`idoctormusicband.web.app`. **Los QR impresos y los enlaces largos no cambian**: esto es una puerta más.
+Alias → bandId en `functions/aliases.json` (provisional; sin alias se acepta el bandId).
+
+```bash
+firebase deploy --only functions:links        # solo la función
+npm run deploy                                # hosting (incluye las rewrites)
+```

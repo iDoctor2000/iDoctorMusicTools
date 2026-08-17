@@ -3,6 +3,20 @@
     "target": "tools",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "cleanUrls": true
-  }
+    "cleanUrls": true,
+    "rewrites": [
+      { "source": "/vota/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
+      { "source": "/en-vivo/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
+      { "source": "/pantalla/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
+      { "source": "/og-card/**", "function": { "functionId": "shareLink", "region": "europe-west1" } }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "links",
+      "runtime": "nodejs22",
+      "ignore": ["node_modules", ".git", "*.log"]
+    }
+  ]
 }

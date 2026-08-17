@@ -1,0 +1,5 @@
+{
+  "_comment": "Alias corto → bandId (Firestore /bands/{id}). Provisional hasta que la app permita elegir alias en Ajustes → Concierto Interactivo y se lea de Firestore. Si un alias no está aquí, se acepta el bandId tal cual.",
+  "elsotano": "7sOz3LnqNGOEuLLyDGwMLCprXcy1",
+  "sotano": "7sOz3LnqNGOEuLLyDGwMLCprXcy1"
+}

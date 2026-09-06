@@ -7,7 +7,7 @@ The controller for these applications is:
 
 iDoctor Music Tools
 Developer: Juan A. Gómez Company
-Contact email: jagomezc@gmail.com
+Contact email: soporte@idoctormusic.com
 
 For any question regarding this privacy policy, you can reach us at the email address above.
 ⸻
@@ -97,7 +97,7 @@ iDoctor Music Tools does not keep users' personal data on its own servers, unles
 
 Where applicable under current regulations, users may exercise their rights of access, rectification, erasure, objection, restriction of processing and portability.
 To exercise these rights or raise any privacy-related question, users can write to:
-jagomezc@gmail.com
+soporte@idoctormusic.com
 If a user believes the processing of their data does not comply with applicable regulations, they may contact the competent data protection authority.
 In Spain, the Spanish Data Protection Agency (AEPD) provides information on rights and personal data protection.
 ⸻
@@ -122,4 +122,4 @@ We recommend reviewing this page periodically for the latest version.
 For any question about this Privacy Policy or about how iDoctor Music Tools applications work:
 
 iDoctor Music Tools
-Email: jagomezc@gmail.com
+Email: soporte@idoctormusic.com

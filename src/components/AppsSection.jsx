@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { getApps } from "../data/catalog.js";
+import { getApps, counts } from "../data/catalog.js";
 import { DynamicIcon, Icons } from "./icons.jsx";
 import SectionHeading from "./SectionHeading.jsx";
 import { publicUrl } from "../utils/publicUrl.js";
-import { t, LANG } from "../i18n/index.js";
+import { t, LANG, href } from "../i18n/index.js";
 
 /** Icono REAL de la app (el de la App Store) con el lucide de reserva. */
 export function AppIcon({ app, className = "h-8 w-8" }) {
@@ -64,6 +64,53 @@ function ScreenshotStrip({ app }) {
         </a>
       ))}
     </div>
+  );
+}
+
+/**
+ * Suscripción: planes y condiciones, con el mismo texto que la ficha de la
+ * App Store (guía 3.1.2 de Apple). Solo aparece en las apps que la traen.
+ */
+function SubscriptionPanel({ app }) {
+  const s = app.subscription;
+  return (
+    <section className="mt-8 rounded-3xl border border-neon-cyan/25 bg-neon-cyan/[0.04] p-6">
+      <h4 className="font-display text-sm font-bold uppercase tracking-[0.22em] text-neon-cyan">
+        {t.apps.subscriptionTitle}
+      </h4>
+      <p className="mt-4 text-base leading-8 text-slate-200">{s.intro}</p>
+      <ul className="mt-5 flex flex-wrap gap-3">
+        {s.plans.map((plan) => (
+          <li
+            key={plan.name}
+            className="rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-slate-200"
+          >
+            <span className="font-semibold text-white">{plan.name}</span>
+            <span className="mx-2 text-slate-500">·</span>
+            <span className="text-neon-cyan">{plan.price}</span>
+            {plan.note && <span className="mt-1 block text-xs text-slate-400">{plan.note}</span>}
+          </li>
+        ))}
+      </ul>
+      <ul className="mt-5 grid gap-2">
+        {s.points.map((point) => (
+          <li key={point} className="flex gap-2 text-sm leading-7 text-slate-300">
+            <span aria-hidden="true" className="text-neon-cyan">
+              ·
+            </span>
+            <span>{point}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+        <a className="text-neon-cyan underline-offset-4 hover:underline" href={s.eulaUrl} target="_blank" rel="noreferrer">
+          {s.eulaLabel}
+        </a>
+        <a className="text-neon-cyan underline-offset-4 hover:underline" href={href(s.privacyPath)}>
+          {s.privacyLabel}
+        </a>
+      </p>
+    </section>
   );
 }
 
@@ -134,6 +181,8 @@ function AppCard({ app, index }) {
         </div>
       </div>
 
+      {app.subscription && <SubscriptionPanel app={app} />}
+
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         {app.appStoreUrl ? (
           <>
@@ -178,7 +227,7 @@ export default function AppsSection() {
     <section id="apps" className="section-shell relative">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow={t.apps.eyebrow} title={t.apps.title}>
-          {t.apps.text}
+          {t.apps.text(counts(LANG))}
         </SectionHeading>
 
         <div className="mt-16 grid gap-6">

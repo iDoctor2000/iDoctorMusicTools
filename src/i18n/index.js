@@ -25,6 +25,13 @@ export const href = (path = "") => localPath(LANG, path);
 /** Ruta equivalente en el otro idioma (para el selector ES/EN). */
 export const altHref = (lang, hash = "") => `${langPrefix(lang)}${hash}`;
 
+/** Numerales en letra (queda mejor que la cifra en un titular). */
+const NUM_ES = ["cero", "una", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez"];
+const NUM_EN = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+const nEs = (n) => cap(NUM_ES[n] ?? String(n));
+const nEn = (n) => cap(NUM_EN[n] ?? String(n));
+
 const strings = {
   es: {
     slogan: BRAND_SLOGAN,
@@ -45,8 +52,13 @@ const strings = {
       title: "iDoctor Music Tools",
       lead:
         "Afinador, metrónomo, cejilla, BeatBuddy, setlists y stems en directo: apps iOS hechas por músicos que tocan, para el ensayo y el escenario.",
-      sub:
-        "Cinco apps ya en la App Store y dos en camino. Diseño oscuro legible en el escenario, precisión de estudio y cero menús inútiles: abrir y tocar.",
+      // Los números salen del catálogo (ver `counts()` en catalog.js): al
+      // publicarse una app la web se actualiza sola. 2026-08-19: se escribían
+      // a mano ("Cinco apps… y dos en camino") y se quedaron viejos.
+      sub: ({ available, soon }) =>
+        `${nEs(available)} ${available === 1 ? "app" : "apps"} ya en la App Store${
+          soon ? ` y ${nEs(soon)} en camino` : ""
+        }. Diseño oscuro legible en el escenario, precisión de estudio y cero menús inútiles: abrir y tocar.`,
       primary: "Explorar apps",
       secondary: "Ver en App Store",
       chips: ["Afina", "Mide", "Transporta", "Organiza", "Toca en directo"],
@@ -71,8 +83,10 @@ const strings = {
     apps: {
       eyebrow: "Apps",
       title: "Precisión, control y creatividad, del ensayo al escenario",
-      text:
-        "Cinco apps a la venta en la App Store y dos en desarrollo. Cada una resuelve un problema concreto; juntas cubren el directo de principio a fin.",
+      text: ({ available, soon }) =>
+        `${nEs(available)} ${available === 1 ? "app" : "apps"} a la venta en la App Store${
+          soon ? ` y ${nEs(soon)} en desarrollo` : ""
+        }. Cada una resuelve un problema concreto; juntas cubren el directo de principio a fin.`,
       features: "Funciones principales",
       audience: "Dirigido a",
       buy: "Descargar en App Store",
@@ -81,6 +95,8 @@ const strings = {
       more: "Más información",
       soon: "Próximamente en App Store",
       pending: "Enlace de App Store en preparación",
+      subscriptionTitle: "Suscripción",
+      subscriptionPlans: "Planes",
       screenshotAlt: (name, i) => `Captura ${i} de ${name}`,
       ratingAria: (rating, count) => `${rating} de 5 estrellas, ${count} valoraciones`,
     },
@@ -119,6 +135,10 @@ const strings = {
       eyebrow: "En pantalla",
       title: "Así se ven en tu iPhone y iPad",
       text: "Capturas reales de las apps, tal y como están en la App Store. Diseño oscuro pensado para leerse de un vistazo en el escenario.",
+      deviceLabel: "Elegir dispositivo",
+      iphone: "iPhone",
+      ipad: "iPad",
+      emptyIpad: "Todavía no hay capturas de iPad de estas apps.",
     },
     roadmap: {
       eyebrow: "Roadmap",
@@ -189,8 +209,10 @@ const strings = {
       title: "iDoctor Music Tools",
       lead:
         "Tuner, metronome, capo, BeatBuddy, setlists and live stems: iOS apps made by working musicians, for rehearsal and stage.",
-      sub:
-        "Five apps already on the App Store and two on the way. Dark design you can read on stage, studio-grade precision and zero useless menus: open and play.",
+      sub: ({ available, soon }) =>
+        `${nEn(available)} ${available === 1 ? "app" : "apps"} already on the App Store${
+          soon ? ` and ${nEn(soon)} on the way` : ""
+        }. Dark design you can read on stage, studio-grade precision and zero useless menus: open and play.`,
       primary: "Explore the apps",
       secondary: "View on App Store",
       chips: ["Tune", "Measure", "Transpose", "Organise", "Play live"],
@@ -215,8 +237,10 @@ const strings = {
     apps: {
       eyebrow: "Apps",
       title: "Precision, control and creativity, from rehearsal to stage",
-      text:
-        "Five apps on sale on the App Store and two in development. Each solves one concrete problem; together they cover the live show from start to finish.",
+      text: ({ available, soon }) =>
+        `${nEn(available)} ${available === 1 ? "app" : "apps"} on sale on the App Store${
+          soon ? ` and ${nEn(soon)} in development` : ""
+        }. Each solves one concrete problem; together they cover the live show from start to finish.`,
       features: "Key features",
       audience: "Made for",
       buy: "Get it on the App Store",
@@ -225,6 +249,8 @@ const strings = {
       more: "Learn more",
       soon: "Coming soon to the App Store",
       pending: "App Store link coming soon",
+      subscriptionTitle: "Subscription",
+      subscriptionPlans: "Plans",
       screenshotAlt: (name, i) => `${name} screenshot ${i}`,
       ratingAria: (rating, count) => `${rating} out of 5 stars, ${count} ratings`,
     },
@@ -263,6 +289,10 @@ const strings = {
       eyebrow: "On screen",
       title: "This is how they look on your iPhone and iPad",
       text: "Real screenshots of the apps, exactly as they are on the App Store. Dark design meant to be read at a glance on stage.",
+      deviceLabel: "Choose device",
+      iphone: "iPhone",
+      ipad: "iPad",
+      emptyIpad: "There are no iPad screenshots for these apps yet.",
     },
     roadmap: {
       eyebrow: "Roadmap",

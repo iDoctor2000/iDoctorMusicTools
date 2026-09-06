@@ -364,7 +364,8 @@ img {
   }
 
   .tablet-shell {
-    @apply max-w-[260px] md:max-w-[310px] xl:max-w-[230px];
+    /* Rejilla de 3 columnas: el iPad es más ancho que el iPhone y pide sitio. */
+    @apply max-w-[300px] lg:max-w-[340px];
   }
 
   .device-glass {
@@ -387,7 +388,8 @@ img {
   }
 
   .tablet-shell .device-screen {
-    @apply aspect-[4/5] rounded-[1.15rem];
+    /* 1199x1600 = 3:4 exacto: la proporción real de las capturas de iPad. */
+    @apply aspect-[3/4] rounded-[1.15rem];
   }
 
   .device-screen img {

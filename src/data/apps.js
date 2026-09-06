@@ -21,8 +21,11 @@ export const apps = [
     tagline: "Afinación precisa en un universo de frecuencias.",
     status: "Disponible",
     description:
-      "iDoctor Tuner Pro es un afinador cromático profesional diseñado para músicos que necesitan precisión, claridad visual y rapidez. Ideal para guitarra, bajo, ukelele, voz e instrumentos acústicos. Su interfaz oscura y luminosa permite usarlo cómodamente en ensayo, estudio o directo.",
+      "iDoctor Tuner Pro es un afinador cromático multiinstrumento diseñado para músicos que necesitan precisión, claridad visual y rapidez. Afina guitarra, guitarra de 12 cuerdas, bajo, ukelele, guitalele, mandolina, violín, tres cubano, requinto, bandurria y banjo de 4 y 5 cuerdas, con cuatro modos de afinación (digital, medidor, aguja analógica y tonos de referencia). Su interfaz oscura y luminosa permite usarlo cómodamente en ensayo, estudio o directo. Sin anuncios, sin suscripción y sin compras dentro de la app: pagas una vez y es tuyo.",
     features: [
+      "Sin anuncios, sin suscripción y sin compras dentro de la app",
+      "Bandurria, tres cubano, requinto, guitalele, mandolina y banjo",
+      "Cuatro modos: digital, medidor, aguja analógica y de oído",
       "Afinador cromático preciso",
       "Detección de frecuencia en tiempo real",
       "Visualización clara de nota y desviación",
@@ -45,8 +48,9 @@ export const apps = [
     tagline: "El pulso de la galaxia, en la palma de tu mano.",
     status: "Disponible",
     description:
-      "iDoctor Metronome Pro es un metrónomo profesional para músicos que necesitan precisión, control y una interfaz visual potente. Está pensado para practicar, ensayar, estudiar ritmos complejos y tocar en directo con un tempo sólido.",
+      "iDoctor Metronome Pro es un metrónomo profesional para músicos que necesitan precisión, control y una interfaz visual potente, con app nativa para Apple Watch: el tempo va contigo en la muñeca, sin sacar el iPhone. Está pensado para practicar, ensayar, estudiar ritmos complejos y tocar en directo con un tempo sólido.",
     features: [
+      "App nativa para Apple Watch: el tempo en la muñeca",
       "Rango amplio de BPM",
       "Tap Tempo",
       "Compases configurables",
@@ -116,11 +120,13 @@ export const apps = [
   },
   {
     slug: "musicband",
+    appleId: 6775728069,
     name: "iDoctor MusicBand",
+    displayName: "iDoctor MusicBand Pro",
     tagline: "El centro de mando de tu banda.",
-    status: "Próximamente",
+    status: "Disponible",
     description:
-      "iDoctor MusicBand es el centro de mando del directo: repertorio, setlists, agenda de conciertos y ensayos, y toda la banda dentro con su propio acceso. Su función estrella es el Concierto Interactivo — el público escanea un QR y vota la siguiente canción desde su móvil, con recuento en vivo y pantalla de proyección para la sala. La versión PRO añade el Modo Show con letra y acordes a pantalla completa, pistas multipista con click y órdenes por salidas independientes, MIDI y pedaleras AirTurn. Hay una versión gratuita para empezar.",
+      "iDoctor MusicBand es el centro de mando del directo: repertorio, setlists, agenda de conciertos y ensayos, y toda la banda dentro con su propio acceso. En el escenario, el Modo Show pinta letra y acordes a pantalla completa, con autoscroll, transposición y anotaciones a lápiz; las pistas multipista salen por canales independientes —la música al PA y el click a los in-ears— con MIDI y pedaleras AirTurn. Y su función más celebrada, el Concierto Interactivo: el público escanea un QR y vota la siguiente canción desde su móvil, con recuento en vivo, karaoke en el teléfono y pantalla de proyección para la sala. La app se descarga gratis y las funciones Pro van por suscripción, con 14 días de prueba.",
     features: [
       "Concierto Interactivo: el público vota la siguiente canción por QR",
       "Pantalla de proyección 16:9 para la sala, con tu logo",
@@ -133,9 +139,34 @@ export const apps = [
     ],
     audience:
       "Bandas, grupos de versiones, orquestas, músicos de directo y directores musicales.",
-    appStoreUrl: null,
+    appStoreUrl: "https://apps.apple.com/app/id6775728069",
+    // SUSCRIPCIÓN (2026-08-19): la app se descarga gratis; las funciones Pro
+    // van por suscripción. Este bloque lo pintan la web y las páginas SEO, y
+    // debe decir LO MISMO que la ficha de la App Store — es lo que Apple exige
+    // (guía 3.1.2) y lo que el usuario espera leer antes de suscribirse.
+    subscription: {
+      intro:
+        "iDoctor MusicBand Pro se descarga gratis: te registras, creas tu banda y empiezas. Las funciones Pro (Modo Show, stems, MIDI, IA…) van por suscripción, con 14 días de prueba gratis.",
+      plans: [
+        { name: "Mensual", price: "3,99 €/mes" },
+        { name: "Anual", price: "44,99 €/año", note: "14 días de prueba gratis" },
+      ],
+      points: [
+        "La suscripción se renueva automáticamente salvo que la canceles al menos 24 horas antes de que acabe el periodo en curso.",
+        "El pago se carga a tu cuenta de Apple al confirmar la compra, y la renovación se cobra en las 24 horas previas al final de cada periodo.",
+        "Puedes gestionarla o cancelarla cuando quieras en los Ajustes de tu Apple ID; al cancelar conservas el acceso hasta que termine el periodo ya pagado.",
+        "Es una sola suscripción por banda: los músicos que des de alta entran con su nombre y contraseña, sin pagar cada uno lo suyo.",
+        "Si la suscripción caduca no pierdes nada: tus canciones, setlists y conciertos siguen ahí y puedes seguir consultándolos; para volver a editarlos, reactívala.",
+        "Precios de España. En tu país verás el equivalente en tu moneda, en la propia App Store.",
+      ],
+      eulaUrl: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+      eulaLabel: "Términos de uso (EULA)",
+      privacyPath: "privacidad/",
+      privacyLabel: "Política de privacidad",
+    },
     screenshot: "/screenshots/musicband-1.webp",
-    // Capturas reales (App Store Connect, Lite) mientras la ficha no exista.
+    // Capturas locales de respaldo: en cuanto `npm run store` traiga las
+    // oficiales de la ficha, mandan las de la tienda.
     screenshots: [
       "/screenshots/musicband-1.webp",
       "/screenshots/musicband-2.webp",

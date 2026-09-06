@@ -35,7 +35,7 @@ const siteUrl = (process.env.VITE_SITE_URL || "https://idoctormusic.com").replac
 const distDir = resolve("dist");
 const today = new Date().toISOString().slice(0, 10);
 const indexNowKey = "8f3c9b6c0f2a4f0f9d4f2a2dbf49d701";
-const SUPPORT_EMAIL = "jagomezc@gmail.com";
+const SUPPORT_EMAIL = "soporte@idoctormusic.com";
 const HERO_BG = "assets/galactic-command-center.webp";
 
 // ---------- textos de cabecera por idioma ----------
@@ -421,6 +421,32 @@ ${body}
 }
 
 // ---------- página de app ----------
+/**
+ * Bloque de SUSCRIPCIÓN de una app (planes, condiciones, EULA y privacidad).
+ * Debe decir lo mismo que la ficha de la App Store: es lo que exige la guía
+ * 3.1.2 de Apple y lo que el usuario necesita leer antes de suscribirse.
+ * Sale de `subscription` en src/data/apps.js (traducido en apps.en.js).
+ */
+function subscriptionSection(app, lang, t) {
+  const s = app.subscription;
+  if (!s) return "";
+  return `
+      <section class="panel" id="suscripcion">
+        <h2>${esc(t.apps.subscriptionTitle)}</h2>
+        <p>${esc(s.intro)}</p>
+        <h3>${esc(t.apps.subscriptionPlans)}</h3>
+        <ul>${s.plans
+          .map((p) => `<li><b>${esc(p.name)}</b>: ${esc(p.price)}${p.note ? ` — ${esc(p.note)}` : ""}</li>`)
+          .join("")}</ul>
+        <ul>${s.points.map((p) => `<li>${esc(p)}</li>`).join("")}</ul>
+        <p>
+          <a href="${esc(s.eulaUrl)}" rel="noopener">${esc(s.eulaLabel)}</a>
+          &nbsp;·&nbsp;
+          <a href="${rel(localPath(lang, s.privacyPath))}">${esc(s.privacyLabel)}</a>
+        </p>
+      </section>`;
+}
+
 function appPage(app, lang, allApps) {
   const m = META[lang];
   const t = stringsFor(lang);
@@ -483,6 +509,7 @@ function appPage(app, lang, allApps) {
         <p>${esc(app.audience)}</p>
         ${app.note ? `<p><em>${esc(app.note)}</em></p>` : ""}
       </section>
+      ${subscriptionSection(app, lang, t)}
       <section class="panel">
         <h2>${esc(t.pages.alsoTitle)}</h2>
         <div class="also">${others

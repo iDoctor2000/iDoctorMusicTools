@@ -2,7 +2,7 @@ import { APP_STORE_DEVELOPER_URL } from "../data/catalog.js";
 import { Icons } from "./icons.jsx";
 import { t, href } from "../i18n/index.js";
 
-export const SUPPORT_EMAIL = "jagomezc@gmail.com";
+export const SUPPORT_EMAIL = "soporte@idoctormusic.com";
 
 export default function Footer() {
   const links = [

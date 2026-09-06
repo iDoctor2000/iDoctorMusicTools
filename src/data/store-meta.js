@@ -32,7 +32,7 @@ export default {
     ],
     "ogImage": "/screenshots/tuner-og.jpg",
     "icon": "/icons/tuner.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
   },
   "metronome": {
     "appleId": 6772919575,
@@ -64,7 +64,7 @@ export default {
     ],
     "ogImage": "/screenshots/metronome-og.jpg",
     "icon": "/icons/metronome.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
   },
   "beatbuddy-assistant": {
     "appleId": 6788465334,
@@ -101,7 +101,7 @@ export default {
     ],
     "ogImage": "/screenshots/beatbuddy-assistant-og.jpg",
     "icon": "/icons/beatbuddy-assistant.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
   },
   "capo": {
     "appleId": 6771513138,
@@ -139,7 +139,7 @@ export default {
     ],
     "ogImage": "/screenshots/capo-og.jpg",
     "icon": "/icons/capo.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
   },
   "livestems": {
     "appleId": 6785842131,
@@ -153,17 +153,17 @@ export default {
     "formattedPrice": "4,99 €",
     "rating": 0,
     "ratingCount": 0,
-    "version": "1.2",
+    "version": "1.3",
     "minimumOsVersion": "17.0",
     "releaseDate": "2026-07-16",
-    "currentVersionReleaseDate": "2026-08-16",
+    "currentVersionReleaseDate": "2026-08-20",
     "languages": [
       "EN",
       "FR",
       "DE",
       "ES"
     ],
-    "fileSizeBytes": 8354816,
+    "fileSizeBytes": 8391680,
     "screenshots": [
       "/screenshots/livestems-1.webp",
       "/screenshots/livestems-2.webp",
@@ -176,7 +176,7 @@ export default {
     ],
     "ogImage": "/screenshots/livestems-og.jpg",
     "icon": "/icons/livestems.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
   },
   "vocal-warmup": {
     "appleId": 6774223047,
@@ -208,6 +208,43 @@ export default {
     ],
     "ogImage": "/screenshots/vocal-warmup-og.jpg",
     "icon": "/icons/vocal-warmup.png",
-    "fetchedAt": "2026-08-16"
+    "fetchedAt": "2026-08-21"
+  },
+  "musicband": {
+    "appleId": 6775728069,
+    "bundleId": "com.idoctor.musicband",
+    "storeName": "iDoctor MusicBand Pro",
+    "url": "https://apps.apple.com/app/id6775728069",
+    "reviewUrl": "https://apps.apple.com/app/id6775728069?action=write-review",
+    "developerUrl": "https://apps.apple.com/developer/juan-gomez-company/id1617442259",
+    "price": 0,
+    "currency": "EUR",
+    "formattedPrice": "Gratis",
+    "rating": 0,
+    "ratingCount": 0,
+    "version": "4.0",
+    "minimumOsVersion": "17.0",
+    "releaseDate": "2026-08-19",
+    "currentVersionReleaseDate": "2026-08-19",
+    "languages": [
+      "EN",
+      "FR",
+      "DE",
+      "ES"
+    ],
+    "fileSizeBytes": 32141312,
+    "screenshots": [
+      "/screenshots/musicband-1.webp",
+      "/screenshots/musicband-2.webp",
+      "/screenshots/musicband-3.webp",
+      "/screenshots/musicband-4.webp"
+    ],
+    "ipadScreenshots": [
+      "/screenshots/musicband-ipad-1.webp",
+      "/screenshots/musicband-ipad-2.webp"
+    ],
+    "ogImage": "/screenshots/musicband-og.jpg",
+    "icon": "/icons/musicband.png",
+    "fetchedAt": "2026-08-21"
   }
 };

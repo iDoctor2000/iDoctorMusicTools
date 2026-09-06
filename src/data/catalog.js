@@ -37,6 +37,16 @@ const STATUS_LABEL = {
  * WebP), screenshot (portada), ogImage (JPG), iconImage, pagePath, y los
  * textos en el idioma pedido.
  */
+/**
+ * Cuántas apps hay publicadas y cuántas en camino. Lo usan los textos de la
+ * home (hero y sección Apps) para no volver a escribir el número a mano.
+ */
+export function counts(lang = DEFAULT_LANG) {
+  const list = getApps(lang);
+  const available = list.filter((a) => a.available).length;
+  return { available, soon: list.length - available, total: list.length };
+}
+
 export function getApps(lang = DEFAULT_LANG) {
   return apps.map((app) => {
     const store = storeMeta[app.slug] || null;
@@ -59,6 +69,9 @@ export function getApps(lang = DEFAULT_LANG) {
       features: tr.features || app.features,
       audience: tr.audience || app.audience,
       note: tr.note || app.note || null,
+      // Suscripción: bloque estructurado (planes, condiciones, enlaces) para
+      // las apps que van por suscripción. Traducido en apps.en.js.
+      subscription: tr.subscription || app.subscription || null,
       available,
       statusLabel: STATUS_LABEL[lang][available ? "available" : "soon"],
       appStoreUrl: store?.url || app.appStoreUrl || null,

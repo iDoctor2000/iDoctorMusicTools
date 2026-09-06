@@ -12,8 +12,11 @@ export const appsEn = {
   tuner: {
     tagline: "Precise tuning in a universe of frequencies.",
     description:
-      "iDoctor Tuner Pro is a professional chromatic tuner for musicians who need accuracy, visual clarity and speed. Ideal for guitar, bass, ukulele, voice and acoustic instruments. Its dark, luminous interface is comfortable in rehearsal, in the studio or on stage.",
+      "iDoctor Tuner Pro is a multi-instrument chromatic tuner for musicians who need accuracy, visual clarity and speed. It tunes guitar, 12-string guitar, bass, ukulele, guitalele, mandolin, violin, Cuban tres, requinto, bandurria and 4- and 5-string banjo, with four tuning modes (digital, meter, analogue needle and reference tones). Its dark, luminous interface is comfortable in rehearsal, in the studio or on stage. No ads, no subscription and no in-app purchases: pay once and it's yours.",
     features: [
+      "No ads, no subscription and no in-app purchases",
+      "Bandurria, Cuban tres, requinto, guitalele, mandolin and banjo",
+      "Four modes: digital, meter, analogue needle and by ear",
       "Accurate chromatic tuner",
       "Real-time frequency detection",
       "Clear note and deviation display",
@@ -27,8 +30,9 @@ export const appsEn = {
   metronome: {
     tagline: "The pulse of the galaxy, in the palm of your hand.",
     description:
-      "iDoctor Metronome Pro is a professional metronome for musicians who need precision, control and a powerful visual interface. Made for practising, rehearsing, studying complex rhythms and playing live with a rock-solid tempo.",
+      "iDoctor Metronome Pro is a professional metronome for musicians who need precision, control and a powerful visual interface, with a native Apple Watch app: the tempo goes on your wrist, no phone needed. Made for practising, rehearsing, studying complex rhythms and playing live with a rock-solid tempo.",
     features: [
+      "Native Apple Watch app: the tempo on your wrist",
       "Wide BPM range",
       "Tap tempo",
       "Configurable time signatures",
@@ -77,7 +81,27 @@ export const appsEn = {
   musicband: {
     tagline: "Your band's command centre.",
     description:
-      "iDoctor MusicBand is the command centre for live shows: repertoire, setlists, gig and rehearsal calendar, and the whole band inside with their own access. Its star feature is the Interactive Concert — the audience scans a QR code and votes for the next song from their phones, with a live count and a projection screen for the venue. The PRO version adds Show Mode with full-screen lyrics and chords, multitrack backing tracks with click and cues on independent outputs, MIDI and AirTurn pedals. There is a free version to get started.",
+      "iDoctor MusicBand is the command centre for live shows: repertoire, setlists, gig and rehearsal calendar, and the whole band inside with their own access. On stage, Show Mode puts lyrics and chords full screen, with autoscroll, transposition and Apple Pencil annotations; multitrack backing goes out on independent channels — music to the PA, click to the in-ears — with MIDI and AirTurn pedals. And its best-loved feature, the Interactive Concert: the audience scans a QR code and votes for the next song from their phones, with a live count, karaoke on their screens and a projection screen for the venue. The app is a free download and the Pro features are a subscription, with a 14-day free trial.",
+    subscription: {
+      intro:
+        "iDoctor MusicBand Pro is a free download: sign up, create your band and get going. The Pro features (Show Mode, stems, MIDI, AI…) are a subscription, with a 14-day free trial.",
+      plans: [
+        { name: "Monthly", price: "€3.99/month" },
+        { name: "Yearly", price: "€44.99/year", note: "14-day free trial" },
+      ],
+      points: [
+        "The subscription renews automatically unless you cancel it at least 24 hours before the current period ends.",
+        "Payment is charged to your Apple account when you confirm the purchase, and renewals are charged within the 24 hours before each period ends.",
+        "You can manage or cancel it whenever you like in your Apple ID settings; if you cancel, you keep access until the period you already paid for runs out.",
+        "One subscription per band: the musicians you add sign in with their own name and password — they do not each pay their own.",
+        "If the subscription lapses you lose nothing: your songs, setlists and gigs are still there to consult; reactivate it to edit them again.",
+        "Prices shown for Spain. In your country the App Store shows the equivalent in your currency.",
+      ],
+      eulaUrl: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+      eulaLabel: "Terms of Use (EULA)",
+      privacyPath: "privacy/",
+      privacyLabel: "Privacy policy",
+    },
     features: [
       "Interactive Concert: the audience votes for the next song via QR",
       "16:9 projection screen for the venue, with your logo",

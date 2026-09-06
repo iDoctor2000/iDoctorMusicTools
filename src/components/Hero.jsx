@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { APP_STORE_DEVELOPER_URL } from "../data/catalog.js";
+import { APP_STORE_DEVELOPER_URL, counts } from "../data/catalog.js";
 import { DynamicIcon, Icons } from "./icons.jsx";
 import { publicUrl } from "../utils/publicUrl.js";
-import { t } from "../i18n/index.js";
+import { t, LANG } from "../i18n/index.js";
 
 const floatingTools = [
   { icon: "Guitar", x: "7%", y: "19%", delay: 0 },
@@ -45,7 +45,7 @@ export default function Hero() {
           <p className="mt-7 max-w-3xl text-xl font-semibold leading-8 text-slate-100 sm:text-2xl">
             {t.hero.lead}
           </p>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">{t.hero.sub}</p>
+          <p className="mt-5 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">{t.hero.sub(counts(LANG))}</p>
           <div className="mt-9 flex flex-col gap-4 sm:flex-row">
             <a className="glow-button glow-button-lg" href="#apps">
               {t.hero.primary}

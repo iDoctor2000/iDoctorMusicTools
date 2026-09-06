@@ -1,7 +1,7 @@
 // index.js — Enlaces cortos de marca del Concierto Interactivo (2026-08-17).
 //
 //   https://idoctormusic.com/vota/<alias>       → público: vota la siguiente canción
-//   https://idoctormusic.com/en-vivo/<alias>    → como el QR impreso (resuelve el setlist en directo)
+//   https://idoctormusic.com/en-vivo/<alias>    → como el QR impreso (la página resuelve sola el setlist en escena)
 //   https://idoctormusic.com/pantalla/<alias>   → pantalla de votación para proyectar
 //   https://idoctormusic.com/og-card/<tipo>/<alias>.jpg → la tarjeta 1200×630 con el LOGO de la banda
 //
@@ -46,7 +46,7 @@ const KINDS = {
     title: (b) => `${b} · Vota la siguiente canción`,
     headline: "Elige la siguiente canción del concierto",
     desc: "Vota desde tu móvil y mira el recuento en directo. Se abre en el navegador: sin app, sin registro, sin datos personales.",
-    target: (id, setlist) => `${CONCERT_BASE}/votar/?banda=${enc(id)}${setlist ? `&setlist=${enc(setlist)}` : ""}`,
+    target: (id) => `${CONCERT_BASE}/votar/?banda=${enc(id)}`,
     glyph: "♪",
   },
   "en-vivo": {
@@ -62,7 +62,7 @@ const KINDS = {
     title: (b) => `${b} · Pantalla de votación en directo`,
     headline: "Recuento en directo para la sala",
     desc: "Proyección con el QR y los votos del público en tiempo real.",
-    target: (id, setlist) => `${CONCERT_BASE}/pantalla/?banda=${enc(id)}${setlist ? `&setlist=${enc(setlist)}` : ""}`,
+    target: (id) => `${CONCERT_BASE}/pantalla/?banda=${enc(id)}`,
     glyph: "▶",
   },
 };
@@ -250,7 +250,13 @@ export const shareLink = onRequest(
       if (!r) return res.status(404).send("Enlace no válido");
       const band = await loadBand(r.bandId);
       if (!band) return res.status(404).send("Banda no encontrada");
-      const target = KINDS[kind].target(r.bandId, band.activeSetlistId);
+      // UN SOLO ENLACE POR BANDA, PARA SIEMPRE (invariante fijado el
+      // 28-08-2026): el redirector ya NO añade `setlist` nunca — ni el de la
+      // query ni el activo. Las páginas del concierto siguen solas al setlist
+      // que esté en escena, y así un enlace corto guardado o impreso no puede
+      // quedarse enganchado a la votación vieja de un bolo pasado. Un
+      // `?setlist=` heredado de enlaces antiguos se ignora sin romperlos.
+      const target = KINDS[kind].target(r.bandId);
       const ua = req.get("user-agent") || "";
       const wantsPreview = BOT_RE.test(ua) || req.query.preview === "1";
       // NO cachear en la CDN: la misma URL responde distinto a robots (HTML
@@ -265,6 +271,332 @@ export const shareLink = onRequest(
     } catch (err) {
       console.error(err);
       return res.status(500).send("Error");
+    }
+  },
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  FOTOS DEL PÚBLICO EN LA PANTALLA (2026-08-23) — "Sube tu foto y sal en
+//  la pantalla", del Concierto Interactivo.
+//
+//  Una sola función HTTP con varias operaciones (`op`). TODO pasa por aquí
+//  con el SDK de administrador: ni la web del público ni la pantalla ni el
+//  moderador tocan Firestore/Storage directamente, así que NO hace falta
+//  cambiar ninguna regla de seguridad — y si esta función falla, lo único
+//  que ocurre es que no aparecen fotos (la votación no se entera: colecciones
+//  y código separados).
+//
+//  Moderación: NADA se proyecta sin aprobar. El moderador usa una CLAVE
+//  (variable de entorno FOTOS_KEY, en functions/.env.<proyecto>, fuera de
+//  git) que se compara aquí con tiempo constante. Interruptor remoto:
+//  `publicLive/current.photosEnabled` (lo leen la web de votar y la pantalla;
+//  apagado = el botón y el collage desaparecen al instante).
+//
+//  Datos: Firestore `bands/{banda}/photos/{device}` (una foto viva por
+//  dispositivo; subir otra la sustituye y vuelve a pendiente) y Storage
+//  `photos/{banda}/{device}.jpg` (URL con token de descarga, como los logos).
+//
+//  Operaciones:
+//    GET  ?op=approved&banda=…              → público: fotos aprobadas (pantalla)
+//    POST {op:"upload", banda, device, image} → público: sube una foto (base64 JPEG)
+//    GET  ?op=queue&banda=…&clave=…          → moderador: pendientes + aprobadas
+//    POST {op:"approve"|"reject"|"remove", banda, id, clave}
+//    POST {op:"toggle", banda, enabled, clave} → interruptor photosEnabled
+//    GET  ?op=zip&banda=…&clave=…            → moderador: descarga un ZIP con
+//                                              las fotos (aprobadas+pendientes)
+//    POST {op:"purge", banda, clave}           → borra todo (fin del bolo)
+// ═══════════════════════════════════════════════════════════════════════════
+import { getStorage } from "firebase-admin/storage";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { randomUUID, timingSafeEqual } from "node:crypto";
+
+const FOTOS_BUCKET = "idoctormusicband.firebasestorage.app";
+const FOTOS_MAX_BYTES = 1.5 * 1024 * 1024;      // tras reducir en el móvil quedan ~150-400 KB
+const FOTOS_MIN_INTERVAL_MS = 15_000;           // una subida por dispositivo cada 15 s
+const FOTOS_MAX_LIST = 40;
+const FOTOS_TTL_MS = 48 * 3600 * 1000;
+const ID_RE = /^[A-Za-z0-9_-]{1,80}$/;          // banda y device: sin rutas, sin sorpresas
+
+function fotosEq(given, real) {
+  if (!real || !given) return false;
+  const a = Buffer.from(String(given)), b = Buffer.from(String(real));
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+/// La clave del moderador puede ser la PROPIA de la banda (la genera la app y
+/// vive en `bands/{banda}/moderation/current`, legible solo por la banda por
+/// las reglas genéricas de subcolecciones) o la MAESTRA (env FOTOS_KEY).
+async function fotosKeyOk(banda, given) {
+  if (typeof given !== "string" || !given) return false;
+  if (fotosEq(given, process.env.FOTOS_KEY || "")) return true;
+  try {
+    const s = await db.doc(`bands/${banda}/moderation/current`).get();
+    return s.exists && fotosEq(given, s.data()?.key || "");
+  } catch (_) { return false; }
+}
+function fotosJson(res, code, obj) {
+  res.set("Cache-Control", "no-store");
+  res.status(code).json(obj);
+}
+function fotosDocOut(d) {
+  const v = d.data() || {};
+  const ts = (t) => (t && typeof t.toMillis === "function") ? t.toMillis() : null;
+  return { id: d.id, status: v.status || "pending", url: v.url || null,
+           createdAt: ts(v.createdAt), approvedAt: ts(v.approvedAt) };
+}
+// ── ZIP del recuerdo (01-09-2026) ─────────────────────────────────────────
+// POR QUÉ AQUÍ Y NO EN EL NAVEGADOR: la primera versión montaba el zip en la
+// página del moderador con fetch() sobre las URLs de Storage… y Firebase
+// Storage sirve las fotos SIN cabecera CORS (las <img> se ven porque una
+// imagen no la necesita, pero leer sus bytes desde otra web está prohibido).
+// Además, en Safari de iPhone una descarga disparada por JavaScript después
+// de esperas asíncronas pierde el "gesto del usuario" y se bloquea sin decir
+// nada. Haciéndolo aquí, el navegador solo sigue un enlace normal y descarga
+// un archivo normal: funciona igual en iPhone, iPad, Mac y Android.
+//
+// ZIP "store" (sin comprimir: los JPEG ya vienen comprimidos), escrito a mano
+// para no meter una dependencia nueva en las funciones del concierto.
+const FOTOS_ZIP_MAX_FILES = 100;
+const FOTOS_ZIP_MAX_BYTES = 24 * 1024 * 1024;   // holgado bajo el tope de respuesta
+const FOTOS_CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function fotosCrc32(buf) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) c = FOTOS_CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function fotosZip(files) {           // files: [{ name, data: Buffer }]
+  const u16 = (v) => Buffer.from([v & 255, (v >>> 8) & 255]);
+  const u32 = (v) => Buffer.from([v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]);
+  const local = [], central = [];
+  let offset = 0;
+  for (const f of files) {
+    const name = Buffer.from(f.name, "utf8");
+    const crc = fotosCrc32(f.data), size = f.data.length;
+    local.push(u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+               u32(crc), u32(size), u32(size), u16(name.length), u16(0), name, f.data);
+    central.push(u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+                 u32(crc), u32(size), u32(size), u16(name.length), u16(0), u16(0),
+                 u16(0), u16(0), u32(0), u32(offset), name);
+    offset += 30 + name.length + size;
+  }
+  const cdSize = central.reduce((n, b) => n + b.length, 0);
+  const eocd = [u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
+                u32(cdSize), u32(offset), u16(0)];
+  return Buffer.concat([...local, ...central, ...eocd]);
+}
+
+const FOTOS_STYLES = ["mosaico", "carrusel", "libre", "auto"];
+const FOTOS_MODES = ["una", "varias"];
+const FOTOS_MULTI_MAX = 4;                    // fotos vivas por móvil en modo "varias"
+const FOTOS_MULTI_RATE_N = 2;                 // subidas permitidas…
+const FOTOS_MULTI_RATE_MS = 5 * 60 * 1000;    // …por ventana de 5 minutos
+async function fotosState(banda) {
+  const s = await db.doc(`bands/${banda}/publicLive/current`).get();
+  const d = s.exists ? (s.data() || {}) : {};
+  return { enabled: d.photosEnabled === true,
+           style: FOTOS_STYLES.includes(d.photosStyle) ? d.photosStyle : "mosaico",
+           mode: FOTOS_MODES.includes(d.photosMode) ? d.photosMode : "una" };
+}
+async function fotosEnabled(banda) { return (await fotosState(banda)).enabled; }
+
+export const fotos = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 30, maxInstances: 10, cors: true },
+  async (req, res) => {
+    try {
+      const q = req.method === "GET" ? req.query : (req.body || {});
+      const op = String(q.op || "");
+      const banda = String(q.banda || "");
+      if (!ID_RE.test(banda)) return fotosJson(res, 400, { error: "banda" });
+      const col = db.collection(`bands/${banda}/photos`);
+      const bucket = getStorage().bucket(FOTOS_BUCKET);
+
+      // ── Público ──────────────────────────────────────────────────────
+      if (op === "approved" && req.method === "GET") {
+        const { enabled, style, mode } = await fotosState(banda);
+        if (!enabled) return fotosJson(res, 200, { enabled: false, style, mode, photos: [] });
+        const snap = await col.where("status", "==", "approved").get();
+        const photos = snap.docs.map(fotosDocOut)
+          .sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)).slice(0, FOTOS_MAX_LIST);
+        return fotosJson(res, 200, { enabled: true, style, mode, photos });
+      }
+
+      if (op === "upload" && req.method === "POST") {
+        const device = String(q.device || "");
+        if (!ID_RE.test(device)) return fotosJson(res, 400, { error: "device" });
+        const st = await fotosState(banda);
+        if (!st.enabled) return fotosJson(res, 403, { error: "disabled" });
+        // Destino según el MODO que eligió el moderador:
+        //  · "una" (por defecto): un doc por móvil (id = huella); subir otra
+        //    sustituye la suya. Anti-spam para salas llenas.
+        //  · "varias": hasta 4 fotos vivas por móvil (ids huella~1…~4) y como
+        //    mucho 2 subidas por móvil cada 5 min. Para bolos con poca gente.
+        let targetId = device;
+        let prev = await col.doc(device).get();
+        if (st.mode === "varias") {
+          const mine = (await col.where("device", "==", device).get()).docs.slice();
+          if (prev.exists && !mine.some((d) => d.id === device)) mine.push(prev);
+          const now = Date.now();
+          const recent = mine.filter((d) => { const u = d.data()?.updatedAt?.toMillis?.(); return u && now - u < FOTOS_MULTI_RATE_MS; });
+          if (recent.length >= FOTOS_MULTI_RATE_N) return fotosJson(res, 429, { error: "rate" });
+          targetId = null;
+          for (let k = 1; k <= FOTOS_MULTI_MAX; k++) {
+            const id = `${device}~${k}`;
+            if (!mine.some((d) => d.id === id)) { targetId = id; break; }
+          }
+          if (!targetId) {
+            // Las 4 llenas: la nueva sustituye a la MÁS ANTIGUA del móvil.
+            const oldest = mine.filter((d) => d.id !== device)
+              .sort((a, b) => (a.data()?.updatedAt?.toMillis?.() || 0) - (b.data()?.updatedAt?.toMillis?.() || 0))[0];
+            targetId = oldest ? oldest.id : `${device}~1`;
+          }
+          prev = await col.doc(targetId).get();
+        } else {
+          // Ritmo del modo "una": una subida por dispositivo cada 15 s.
+          const prevAt = prev.exists ? prev.data()?.updatedAt?.toMillis?.() : null;
+          if (prevAt && Date.now() - prevAt < FOTOS_MIN_INTERVAL_MS) return fotosJson(res, 429, { error: "rate" });
+        }
+        let b64 = String(q.image || "");
+        const comma = b64.indexOf(",");
+        if (b64.startsWith("data:") && comma > 0) b64 = b64.slice(comma + 1);
+        const buf = Buffer.from(b64, "base64");
+        if (buf.length < 1024 || buf.length > FOTOS_MAX_BYTES) return fotosJson(res, 413, { error: "size" });
+        if (!(buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF)) return fotosJson(res, 415, { error: "jpeg" });
+        const path = `photos/${banda}/${targetId}.jpg`;
+        const token = randomUUID();
+        await bucket.file(path).save(buf, {
+          resumable: false,
+          metadata: { contentType: "image/jpeg", cacheControl: "public, max-age=31536000, immutable",
+                      metadata: { firebaseStorageDownloadTokens: token } },
+        });
+        const url = `https://firebasestorage.googleapis.com/v0/b/${FOTOS_BUCKET}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+        await col.doc(targetId).set({
+          status: "pending", path, url, device,
+          createdAt: prev.exists ? (prev.data()?.createdAt || FieldValue.serverTimestamp()) : FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(), approvedAt: null,
+          expiresAt: Timestamp.fromMillis(Date.now() + FOTOS_TTL_MS),
+        });
+        return fotosJson(res, 200, { ok: true });
+      }
+
+      // ── Moderador (clave) ────────────────────────────────────────────
+      if (!(await fotosKeyOk(banda, String(q.clave || "")))) return fotosJson(res, 401, { error: "clave" });
+
+      // Solo con la clave MAESTRA: leer/crear la clave propia de la banda
+      // (para administrar; la app la crea por su cuenta vía Firestore).
+      if (op === "bandkey" && req.method === "POST") {
+        if (!fotosEq(String(q.clave || ""), process.env.FOTOS_KEY || "")) return fotosJson(res, 401, { error: "clave" });
+        const ref = db.doc(`bands/${banda}/moderation/current`);
+        const s = await ref.get();
+        let key = s.exists ? String(s.data()?.key || "") : "";
+        // rotate:true → clave NUEVA aunque exista (revoca los enlaces repartidos).
+        if (q.rotate === true || q.rotate === "true") key = "";
+        if (!key) {
+          const AB = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+          key = "FOTOS-" + Array.from({ length: 8 }, () => AB[Math.floor(Math.random() * AB.length)]).join("");
+          await ref.set({ key, createdAt: FieldValue.serverTimestamp() }, { merge: true });
+        }
+        return fotosJson(res, 200, { ok: true, key });
+      }
+
+      if (op === "queue" && req.method === "GET") {
+        const { enabled, style, mode } = await fotosState(banda);
+        const snap = await col.get();
+        const all = snap.docs.map(fotosDocOut);
+        const by = (st) => all.filter((p) => p.status === st);
+        const newestFirst = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
+        return fotosJson(res, 200, {
+          enabled, style, mode,
+          pending:  by("pending").sort(newestFirst),
+          approved: by("approved").sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)),
+          rejected: by("rejected").length,
+        });
+      }
+      // El RECUERDO de la noche: un zip con las fotos aprobadas y las que
+      // quedaron pendientes, en el orden en que se subieron. Las RECHAZADAS
+      // no van: el moderador las apartó por algo.
+      if (op === "zip" && req.method === "GET") {
+        const snap = await col.get();
+        const wanted = snap.docs
+          .map((d) => ({ v: d.data() || {} }))
+          .filter((x) => x.v.path && (x.v.status === "approved" || x.v.status === "pending"))
+          .sort((a, b) => {
+            const t = (x) => (x.v.createdAt && typeof x.v.createdAt.toMillis === "function")
+              ? x.v.createdAt.toMillis() : 0;
+            return t(a) - t(b);
+          })
+          .slice(0, FOTOS_ZIP_MAX_FILES);
+        const files = [];
+        let total = 0;
+        for (const x of wanted) {
+          let buf;
+          try { [buf] = await bucket.file(x.v.path).download(); }
+          catch (_) { continue; }                       // una foto perdida no tumba el zip
+          if (total + buf.length > FOTOS_ZIP_MAX_BYTES) break;
+          total += buf.length;
+          files.push({ name: `foto-${String(files.length + 1).padStart(2, "0")}.jpg`, data: buf });
+        }
+        if (!files.length) return fotosJson(res, 404, { error: "vacio" });
+        const zip = fotosZip(files);
+        const fecha = new Date().toISOString().slice(0, 10);
+        res.set("Cache-Control", "no-store");
+        res.set("Content-Type", "application/zip");
+        res.set("Content-Length", String(zip.length));
+        res.set("Content-Disposition", `attachment; filename="fotos-bolo-${fecha}.zip"`);
+        return res.status(200).send(zip);
+      }
+      if ((op === "approve" || op === "reject" || op === "remove") && req.method === "POST") {
+        const id = String(q.id || "");
+        if (!/^[A-Za-z0-9_-]{1,80}(~[1-9])?$/.test(id)) return fotosJson(res, 400, { error: "id" });
+        const ref = col.doc(id);
+        if (op === "remove") {
+          const d = await ref.get();
+          if (d.exists && d.data()?.path) await bucket.file(d.data().path).delete({ ignoreNotFound: true });
+          await ref.delete();
+          return fotosJson(res, 200, { ok: true });
+        }
+        await ref.set({ status: op === "approve" ? "approved" : "rejected",
+                        approvedAt: op === "approve" ? FieldValue.serverTimestamp() : null,
+                        moderatedAt: FieldValue.serverTimestamp() }, { merge: true });
+        return fotosJson(res, 200, { ok: true });
+      }
+      if (op === "toggle" && req.method === "POST") {
+        const enabled = q.enabled === true || q.enabled === "true" || q.enabled === 1 || q.enabled === "1";
+        await db.doc(`bands/${banda}/publicLive/current`).set({ photosEnabled: enabled }, { merge: true });
+        return fotosJson(res, 200, { ok: true, enabled });
+      }
+      if (op === "style" && req.method === "POST") {
+        const style = String(q.style || "");
+        if (!FOTOS_STYLES.includes(style)) return fotosJson(res, 400, { error: "style" });
+        await db.doc(`bands/${banda}/publicLive/current`).set({ photosStyle: style }, { merge: true });
+        return fotosJson(res, 200, { ok: true, style });
+      }
+      if (op === "mode" && req.method === "POST") {
+        const mode = String(q.mode || "");
+        if (!FOTOS_MODES.includes(mode)) return fotosJson(res, 400, { error: "mode" });
+        await db.doc(`bands/${banda}/publicLive/current`).set({ photosMode: mode }, { merge: true });
+        return fotosJson(res, 200, { ok: true, mode });
+      }
+      if (op === "purge" && req.method === "POST") {
+        const snap = await col.get();
+        let n = 0;
+        for (const d of snap.docs) {
+          const p = d.data()?.path;
+          if (p) await bucket.file(p).delete({ ignoreNotFound: true });
+          await d.ref.delete(); n++;
+        }
+        return fotosJson(res, 200, { ok: true, deleted: n });
+      }
+      return fotosJson(res, 400, { error: "op" });
+    } catch (e) {
+      console.error("fotos:", e);
+      return fotosJson(res, 500, { error: "server" });
     }
   },
 );

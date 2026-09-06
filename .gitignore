@@ -7,3 +7,4 @@ verification/
 qa-shots/
 functions/node_modules/
 functions/*.log
+functions/.env*

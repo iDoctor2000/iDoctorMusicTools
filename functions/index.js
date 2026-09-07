@@ -402,7 +402,12 @@ async function fotosState(banda) {
   const d = s.exists ? (s.data() || {}) : {};
   return { enabled: d.photosEnabled === true,
            style: FOTOS_STYLES.includes(d.photosStyle) ? d.photosStyle : "mosaico",
-           mode: FOTOS_MODES.includes(d.photosMode) ? d.photosMode : "una" };
+           mode: FOTOS_MODES.includes(d.photosMode) ? d.photosMode : "una",
+           // MODERACIÓN APAGADA (07-09-2026): para bolos pequeños entre amigos.
+           // Por defecto ENCENDIDA (todo sigue igual que hasta hoy). Apagada,
+           // la pantalla enseña también las pendientes: nadie tiene que estar
+           // aprobando fotos que no van a dar problema. La subida NO cambia.
+           moderation: d.photosModeration !== false };
 }
 async function fotosEnabled(banda) { return (await fotosState(banda)).enabled; }
 
@@ -419,12 +424,15 @@ export const fotos = onRequest(
 
       // ── Público ──────────────────────────────────────────────────────
       if (op === "approved" && req.method === "GET") {
-        const { enabled, style, mode } = await fotosState(banda);
-        if (!enabled) return fotosJson(res, 200, { enabled: false, style, mode, photos: [] });
-        const snap = await col.where("status", "==", "approved").get();
+        const { enabled, style, mode, moderation } = await fotosState(banda);
+        if (!enabled) return fotosJson(res, 200, { enabled: false, style, mode, moderation, photos: [] });
+        // Sin moderación, las pendientes cuentan como aprobadas para la pantalla.
+        const snap = moderation
+          ? await col.where("status", "==", "approved").get()
+          : await col.where("status", "in", ["approved", "pending"]).get();
         const photos = snap.docs.map(fotosDocOut)
-          .sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)).slice(0, FOTOS_MAX_LIST);
-        return fotosJson(res, 200, { enabled: true, style, mode, photos });
+          .sort((a, b) => (b.approvedAt || b.createdAt || 0) - (a.approvedAt || a.createdAt || 0)).slice(0, FOTOS_MAX_LIST);
+        return fotosJson(res, 200, { enabled: true, style, mode, moderation, photos });
       }
 
       if (op === "upload" && req.method === "POST") {
@@ -506,13 +514,13 @@ export const fotos = onRequest(
       }
 
       if (op === "queue" && req.method === "GET") {
-        const { enabled, style, mode } = await fotosState(banda);
+        const { enabled, style, mode, moderation } = await fotosState(banda);
         const snap = await col.get();
         const all = snap.docs.map(fotosDocOut);
         const by = (st) => all.filter((p) => p.status === st);
         const newestFirst = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
         return fotosJson(res, 200, {
-          enabled, style, mode,
+          enabled, style, mode, moderation,
           pending:  by("pending").sort(newestFirst),
           approved: by("approved").sort((a, b) => (b.approvedAt || 0) - (a.approvedAt || 0)),
           rejected: by("rejected").length,
@@ -570,6 +578,11 @@ export const fotos = onRequest(
         const enabled = q.enabled === true || q.enabled === "true" || q.enabled === 1 || q.enabled === "1";
         await db.doc(`bands/${banda}/publicLive/current`).set({ photosEnabled: enabled }, { merge: true });
         return fotosJson(res, 200, { ok: true, enabled });
+      }
+      if (op === "moderation" && req.method === "POST") {
+        const on = !(q.enabled === false || q.enabled === "false" || q.enabled === 0 || q.enabled === "0");
+        await db.doc(`bands/${banda}/publicLive/current`).set({ photosModeration: on }, { merge: true });
+        return fotosJson(res, 200, { ok: true, moderation: on });
       }
       if (op === "style" && req.method === "POST") {
         const style = String(q.style || "");

@@ -613,3 +613,71 @@ export const fotos = onRequest(
     }
   },
 );
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PORTAL DEL MÚSICO — enlace «bonito» por banda (07-09-2026)
+//
+// WhatsApp, Telegram y compañía NO ejecutan la web: leen las etiquetas Open
+// Graph fijas de la página. Para que al compartir salga el NOMBRE y el LOGO de
+// cada banda, cada banda tiene su enlace: /musicos/b/{bandId}. Esta función
+// devuelve una página mínima con las etiquetas rellenas (nombre, logo, texto)
+// y redirige al portal de verdad en cuanto la abre una persona. Los robots de
+// las redes se quedan con la tarjeta; la gente ni lo nota.
+// Público por diseño: solo expone nombre y logo de la banda (lo mismo que ya
+// enseña el cartel del QR); nada de canciones ni agenda.
+// ═══════════════════════════════════════════════════════════════════════════
+const PORTAL_BASE = "https://idoctormusicband.web.app";
+const PORTAL_OG = `${PORTAL_BASE}/og/musicos.jpg`;
+const escHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+export const portal = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 15, maxInstances: 5 },
+  async (req, res) => {
+    try {
+      // Acepta /musicos/b/{bandId} (rewrite de hosting) y ?banda={bandId}
+      const m = (req.path || "").match(/\/b\/([A-Za-z0-9_-]{6,})/);
+      const bandId = m ? m[1] : String(req.query.banda || "");
+      let name = "", logo = "";
+      if (bandId) {
+        const [band, presets] = await Promise.all([
+          db.doc(`bands/${bandId}`).get(),
+          db.doc(`bands/${bandId}/presets/main`).get(),
+        ]);
+        if (band.exists) name = band.data().name || "";
+        if (presets.exists) logo = presets.data().logoUrl || "";
+      }
+      const titulo = name ? `${name} · iDoctor MusicBand Web` : "iDoctor MusicBand Web · Portal del músico";
+      const descripcion = name
+        ? `Portal de ${name}: conciertos, ensayos, setlists, letras con acordes y jukebox de la banda. Entra con tu Google o con tu nombre de músico.`
+        : "El portal de tu banda: conciertos, ensayos, setlists, letras con acordes y jukebox, desde cualquier móvil u ordenador.";
+      const destino = `${PORTAL_BASE}/musicos/${name ? "?banda=" + encodeURIComponent(name) : ""}`;
+      const imagen = logo || PORTAL_OG;
+      const url = `${PORTAL_BASE}/musicos/b/${encodeURIComponent(bandId)}`;
+      res.set("Cache-Control", "public, max-age=300, s-maxage=600");
+      res.status(200).send(`<!doctype html><html lang="es"><head><meta charset="utf-8">
+<title>${escHtml(titulo)}</title>
+<meta name="description" content="${escHtml(descripcion)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="iDoctor MusicBand Web">
+<meta property="og:title" content="${escHtml(titulo)}">
+<meta property="og:description" content="${escHtml(descripcion)}">
+<meta property="og:url" content="${escHtml(url)}">
+<meta property="og:image" content="${escHtml(imagen)}">
+${logo ? "" : '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">'}
+<meta property="og:locale" content="es_ES">
+<meta name="twitter:card" content="${logo ? "summary" : "summary_large_image"}">
+<meta name="twitter:title" content="${escHtml(titulo)}">
+<meta name="twitter:description" content="${escHtml(descripcion)}">
+<meta name="twitter:image" content="${escHtml(imagen)}">
+<meta name="theme-color" content="#0a0e14">
+<meta http-equiv="refresh" content="0; url=${escHtml(destino)}">
+<link rel="canonical" href="${escHtml(destino)}">
+<style>body{margin:0;background:#0a0e14;color:#fff;font-family:-apple-system,system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}a{color:#00e5ff}</style>
+</head><body><div><p>Abriendo el portal de <b>${escHtml(name || "tu banda")}</b>…</p><p><a href="${escHtml(destino)}">Pulsa aquí si no se abre solo</a></p></div>
+<script>location.replace(${JSON.stringify(destino)});</script></body></html>`);
+    } catch (e) {
+      console.error("portal:", e);
+      res.redirect(302, `${PORTAL_BASE}/musicos/`);
+    }
+  }
+);

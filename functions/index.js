@@ -630,6 +630,63 @@ const PORTAL_BASE = "https://idoctormusicband.web.app";
 const PORTAL_OG = `${PORTAL_BASE}/og/musicos.jpg`;
 const escHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
+// ── /api/audio — PUENTE DEL AUDIO PARA CAMBIAR EL TONO (08-09-2026) ───────
+//
+// EL PORQUÉ: en el jukebox de la web, subir el tono subía también la velocidad
+// (playbackRate con preservesPitch=false, el método viejo de la intranet).
+// Separarlos exige meter el audio en Web Audio, y el navegador SILENCIA
+// cualquier audio de otro sitio que no mande cabeceras CORS. Dropbox no las
+// manda (comprobado: el audio suena, pero llega a cero a Web Audio).
+//
+// Esta función es el puente: descarga el audio de la banda y lo devuelve con
+// CORS, respetando el Range para que se pueda ir por la mitad de la canción.
+//
+// NO ES UN PROXY ABIERTO: no acepta una URL cualquiera, sino la banda y la
+// canción; el enlace sale de `bands/{banda}/songs/{cancion}.linkAudio`. Y el
+// portal SOLO lo usa cuando el tono está cambiado: con el tono a cero, el
+// audio va directo de Dropbox como hasta hoy, sin gastar nada.
+export const audio = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 120, maxInstances: 10, cors: false },
+  async (req, res) => {
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Access-Control-Allow-Headers", "Range");
+    res.set("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges, Content-Type");
+    if (req.method === "OPTIONS") { res.status(204).send(""); return; }
+
+    const bandId = String(req.query.b || "").trim();
+    const songId = String(req.query.s || "").trim();
+    if (!/^[A-Za-z0-9_-]{6,}$/.test(bandId) || !songId) { res.status(400).send("faltan banda y canción"); return; }
+    try {
+      const snap = await db.doc(`bands/${bandId}/songs/${songId}`).get();
+      if (!snap.exists) { res.status(404).send("canción no encontrada"); return; }
+      let url = String(snap.data().linkAudio || "").trim();
+      if (!/^https:\/\//i.test(url)) { res.status(404).send("esa canción no tiene audio"); return; }
+      // Mismo apaño que el jukebox: el enlace de Dropbox se pide en crudo.
+      if (url.includes("dropbox.com")) {
+        url = url.match(/dl=[01]/) ? url.replace(/dl=[01]/g, "raw=1")
+                                   : (url.includes("raw=1") ? url : url + (url.includes("?") ? "&" : "?") + "raw=1");
+      }
+      const cabeceras = {};
+      if (req.headers.range) cabeceras.Range = req.headers.range;
+      const r = await fetch(url, { headers: cabeceras, redirect: "follow" });
+      if (!r.ok && r.status !== 206) { res.status(502).send("no se pudo leer el audio"); return; }
+      for (const h of ["content-type", "content-length", "content-range", "accept-ranges"]) {
+        const v = r.headers.get(h);
+        if (v) res.set(h, v);
+      }
+      if (!r.headers.get("accept-ranges")) res.set("Accept-Ranges", "bytes");
+      res.set("Cache-Control", "private, max-age=3600");
+      res.status(r.status === 206 ? 206 : 200);
+      // Se manda tal cual llega, sin cargarlo entero en memoria.
+      const { Readable } = await import("node:stream");
+      Readable.fromWeb(r.body).pipe(res);
+    } catch (e) {
+      console.error("audio:", e);
+      res.status(500).send("error");
+    }
+  }
+);
+
 export const portal = onRequest(
   { region: "europe-west1", memory: "256MiB", timeoutSeconds: 15, maxInstances: 5 },
   async (req, res) => {

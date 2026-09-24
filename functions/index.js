@@ -22,6 +22,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 import { createCanvas, loadImage, GlobalFonts } from "@napi-rs/canvas";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -645,6 +646,24 @@ const escHtml = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ 
 // canción; el enlace sale de `bands/{banda}/songs/{cancion}.linkAudio`. Y el
 // portal SOLO lo usa cuando el tono está cambiado: con el tono a cero, el
 // audio va directo de Dropbox como hasta hoy, sin gastar nada.
+// Quién puede pedir el audio de una banda: el dueño (su uid ES el bandId) o un
+// miembro con su entrada en `groupAuth` — copia fiel de isOwnerOf/isMemberOf
+// de firestore.rules, que es lo que ya decide quién lee `songs/{id}.linkAudio`.
+// El admin de plataforma no se contempla aquí a propósito (no usa el jukebox).
+// Se recuerda por instancia: el <audio> vuelve a llamar en cada salto (Range)
+// y no hace falta releer Firestore cada vez.
+const audioAcceso = new Map();
+async function audioPuedeLeer(uid, bandId) {
+  if (!uid) return false;
+  if (uid === bandId) return true;
+  const k = uid + "|" + bandId, c = audioAcceso.get(k);
+  if (c && Date.now() - c.at < (c.ok ? 5 * 60_000 : 30_000)) return c.ok;
+  const ok = (await db.doc(`bands/${bandId}/groupAuth/${uid}`).get()).exists;
+  if (audioAcceso.size > 2000) audioAcceso.clear();
+  audioAcceso.set(k, { ok, at: Date.now() });
+  return ok;
+}
+
 export const audio = onRequest(
   { region: "europe-west1", memory: "256MiB", timeoutSeconds: 120, maxInstances: 10, cors: false },
   async (req, res) => {
@@ -655,7 +674,21 @@ export const audio = onRequest(
 
     const bandId = String(req.query.b || "").trim();
     const songId = String(req.query.s || "").trim();
-    if (!/^[A-Za-z0-9_-]{6,}$/.test(bandId) || !songId) { res.status(400).send("faltan banda y canción"); return; }
+    if (!/^[A-Za-z0-9_-]{6,}$/.test(bandId) || !songId || songId.includes("/") || songId.length > 200) {
+      res.status(400).send("faltan banda y canción"); return;
+    }
+    // IDENTIFICACIÓN (24-09-2026). Antes bastaban el id de la banda (va en el
+    // QR) y el de una canción (viaja en las votaciones públicas) para llevarse
+    // su audio — misteriosa incluida. Ahora hay que ser quien ya puede leer esa
+    // canción. El token va en la URL (`t`) porque un <audio> no manda cabeceras.
+    const token = String(req.query.t || "");
+    if (!token) { res.status(401).send("hay que identificarse"); return; }
+    let uid = "";
+    try { uid = (await getAuth().verifyIdToken(token)).uid; }
+    catch (e) { res.status(401).send("identificación no válida o caducada"); return; }
+    try {
+      if (!(await audioPuedeLeer(uid, bandId))) { res.status(403).send("sin acceso a esta banda"); return; }
+    } catch (e) { console.error("audio acceso:", e); res.status(500).send("error"); return; }
     try {
       const snap = await db.doc(`bands/${bandId}/songs/${songId}`).get();
       if (!snap.exists) { res.status(404).send("canción no encontrada"); return; }

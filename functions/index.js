@@ -771,3 +771,156 @@ ${logo ? "" : '<meta property="og:image:width" content="1200"><meta property="og
     }
   }
 );
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DEMO EN VIVO DEL CONCIERTO INTERACTIVO (16-10-2026) — la portada de
+//  idoctormusicband.web.app enseña la pantalla de sala de una banda de
+//  demostración: quien entra escanea el QR, vota con su móvil y ve su voto
+//  aparecer, con reveal, podio y confeti, como en un bolo de verdad.
+//
+//  · Una sola banda, FIJA aquí (DEMO_BANDA). La función no recibe parámetros:
+//    no puede escribir en ninguna otra parte.
+//  · Se mueve SOLA mientras alguien mira: la pantalla y la página de votar de
+//    la banda demo llaman a /api/demo cada pocos segundos; con nadie mirando no
+//    pasa nada (coste cero). Cada llamada avanza la máquina de estados en una
+//    TRANSACCIÓN: abrir ronda → añadir público simulado → cerrar con podio →
+//    dejar el reveal unos segundos → abrir la siguiente.
+//  · El público simulado se dice en la portada («tu voto es real; el resto del
+//    público, simulado»): en una demo vacía nadie vería moverse las barras.
+//  · Los documentos se escriben con los MISMOS campos que la app
+//    (LivePollService.openPoll/closePoll), incluida `candidateSongIds`, que es
+//    lo que las reglas miran para aceptar el voto del público.
+//  · El título real de la canción misteriosa vive en `_demo/estado`, que el
+//    público no puede leer (ninguna regla lo abre); solo se publica si gana.
+// ═══════════════════════════════════════════════════════════════════════════
+const DEMO_BANDA = "demo-concierto";
+const DEMO_SETLIST = "demo";
+const DEMO_ABIERTA_MS = 40_000;      // lo que dura cada votación
+const DEMO_REVEAL_MS = 15_000;       // podio y confeti antes de la siguiente
+const DEMO_BOT_CADA_MS = 2_500;      // ritmo del público simulado
+const DEMO_CANCIONES = [
+  ["La flaca", "Jarabe de Palo"], ["Sufre mamón", "Hombres G"], ["Rosas", "La Oreja de Van Gogh"],
+  ["Entre dos tierras", "Héroes del Silencio"], ["Mediterráneo", "Joan Manuel Serrat"],
+  ["Insurrección", "El Último de la Fila"], ["La chica de ayer", "Nacha Pop"],
+  ["Lucha de gigantes", "Nacha Pop"], ["Corazón espinado", "Santana y Maná"],
+  ["Bailando", "Alaska y los Pegamoides"], ["Devuélveme a mi chica", "Hombres G"],
+  ["Chiquilla", "Seguridad Social"], ["Sweet Child O' Mine", "Guns N' Roses"],
+  ["Don't Stop Me Now", "Queen"], ["Livin' on a Prayer", "Bon Jovi"], ["Mr. Brightside", "The Killers"],
+  ["Dancing Queen", "ABBA"], ["Highway to Hell", "AC/DC"], ["Seven Nation Army", "The White Stripes"],
+  ["Twist and Shout", "The Beatles"],
+].map(([title, artist], i) => ({ songId: "demo" + String(i + 1).padStart(2, "0"), title, artist }));
+const DEMO_PERFIL = {
+  bandName: "Banda de demostración",
+  activeSetlistId: DEMO_SETLIST,
+  logoUrl: "https://idoctormusicband.web.app/musicos/icon-180.png",
+  messages: [
+    "Esto es una demo: vota lo que quieras, aquí nadie se enfada 😄",
+    "Así lo vive tu público en un bolo de verdad 🎤",
+    "Tu voto es real; el resto del público, simulado 🤖",
+    "Cada ronda dura 40 segundos. ¡Corre!",
+    "¿Te lo imaginas con tu banda? iDoctor MusicBand es gratis",
+  ],
+  photosEnabled: false,
+};
+
+function demoRonda() {
+  const pool = [...DEMO_CANCIONES];
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const elegidas = pool.slice(0, 4);
+  // Una ronda de cada tres, más o menos, trae «canción misteriosa».
+  const misterio = Math.random() < 0.35 ? elegidas[Math.floor(Math.random() * 4)] : null;
+  // Preferencias del público simulado: una favorita clara y el resto repartido.
+  const fav = Math.floor(Math.random() * 4);
+  const pesos = elegidas.map((_, i) => (i === fav ? 3 : 1) + Math.random() * 1.5);
+  return { elegidas, misterio, pesos, objetivo: 9 + Math.floor(Math.random() * 7) };
+}
+function demoSorteo(pesos) {
+  const total = pesos.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < pesos.length; i++) { r -= pesos[i]; if (r <= 0) return i; }
+  return pesos.length - 1;
+}
+
+export const demo = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 20, maxInstances: 3, cors: false },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    if (req.method !== "GET") { res.status(405).send(""); return; }
+    const banda = db.doc(`bands/${DEMO_BANDA}`);
+    const perfilRef = banda.collection("publicLive").doc("current");
+    const pollRef = banda.collection("setlists").doc(DEMO_SETLIST).collection("livePoll").doc("current");
+    const votosCol = banda.collection("setlists").doc(DEMO_SETLIST).collection("livePollVotes");
+    const estadoRef = db.doc("_demo/estado");
+    try {
+      const fuera = await db.runTransaction(async (t) => {
+        const [estadoSnap, pollSnap, perfilSnap] = await Promise.all([t.get(estadoRef), t.get(pollRef), t.get(perfilRef)]);
+        const e = estadoSnap.exists ? estadoSnap.data() : {};
+        const poll = pollSnap.exists ? pollSnap.data() : null;
+        const ahora = Date.now();
+        const abierta = !!(poll && poll.isOpen && e.pollId === poll.pollId);
+        const cierra = e.cierraEn || 0, cerrada = e.cerradaEn || 0;
+
+        // 1) Toca ABRIR: no hay ronda, o el reveal de la anterior ya pasó.
+        if (!abierta && (!poll || !e.pollId || ahora - cerrada >= DEMO_REVEAL_MS)) {
+          const viejos = await t.get(votosCol.limit(400));
+          const r = demoRonda(), pollId = randomUUID();
+          viejos.docs.forEach(d => t.delete(d.ref));
+          if (!perfilSnap.exists) t.set(perfilRef, { ...DEMO_PERFIL, updatedAt: Timestamp.now() });
+          t.set(pollRef, {
+            pollId, isOpen: true, bandName: DEMO_PERFIL.bandName,
+            candidateSongIds: r.elegidas.map(c => c.songId),
+            candidates: r.elegidas.map(c => r.misterio && c.songId === r.misterio.songId
+              ? { songId: c.songId, title: "🎁 ???", artist: "", isMystery: true }
+              : { ...c, isMystery: false }),
+            openedAt: Timestamp.fromMillis(ahora), closesAt: Timestamp.fromMillis(ahora + DEMO_ABIERTA_MS),
+            closedAt: null, winnerSongId: null, podium: null, participants: null, overtime: null, topic: null,
+            social: { instagram: "", spotify: "", youtube: "", website: "", tiktok: "", facebook: "" },
+          });
+          t.set(estadoRef, { pollId, cierraEn: ahora + DEMO_ABIERTA_MS, cerradaEn: 0, misterio: r.misterio,
+                             pesos: r.pesos, objetivo: r.objetivo, bots: 0, ultimoBot: ahora });
+          return { fase: "abierta", queda: DEMO_ABIERTA_MS };
+        }
+
+        // 2) Toca CERRAR: se acabó el reloj. Mismo criterio que la app: gana la
+        //    más votada y, en empate, la primera de la lista; podio de tres.
+        if (abierta && ahora >= cierra) {
+          const votos = await t.get(votosCol.where("pollId", "==", e.pollId));
+          const cuenta = {};
+          votos.docs.forEach(d => { const s = d.data().songId; cuenta[s] = (cuenta[s] || 0) + 1; });
+          const cands = poll.candidates || [];
+          const total = Object.values(cuenta).reduce((a, b) => a + b, 0);
+          const orden = cands.map((c, i) => ({ c, i, v: cuenta[c.songId] || 0 })).sort((a, b) => b.v - a.v || a.i - b.i);
+          const ganadora = total ? orden[0].c : null;
+          const podium = total ? orden.slice(0, 3).map(({ c, v }) => {
+            const revelada = c.isMystery && ganadora && c.songId === ganadora.songId && e.misterio;
+            return { songId: c.songId, title: revelada ? e.misterio.title : c.title, artist: revelada ? e.misterio.artist : c.artist,
+                     votes: v, pct: Math.floor(v * 100 / total), wasMystery: !!revelada };
+          }) : null;
+          t.update(pollRef, { isOpen: false, closedAt: Timestamp.fromMillis(ahora), closesAt: null, overtime: null,
+                              winnerSongId: ganadora ? ganadora.songId : null, podium, participants: total || null });
+          t.update(estadoRef, { cerradaEn: ahora });
+          return { fase: "cerrada", queda: DEMO_REVEAL_MS };
+        }
+
+        // 3) Abierta y con tiempo: el público simulado vota poco a poco.
+        if (abierta && (e.bots || 0) < (e.objetivo || 0) && ahora - (e.ultimoBot || 0) >= DEMO_BOT_CADA_MS) {
+          const n = Math.min((e.objetivo || 0) - (e.bots || 0), 1 + (Math.random() < 0.45 ? 1 : 0));
+          for (let k = 0; k < n; k++) {
+            const idx = demoSorteo(e.pesos || [1, 1, 1, 1]);
+            const songId = (poll.candidateSongIds || [])[idx];
+            if (!songId) continue;
+            t.set(votosCol.doc(`publico${String((e.bots || 0) + k + 1).padStart(2, "0")}_${e.pollId}`),
+                  { pollId: e.pollId, songId, votedAt: Timestamp.fromMillis(ahora) });
+          }
+          t.update(estadoRef, { bots: (e.bots || 0) + n, ultimoBot: ahora });
+        }
+        return abierta ? { fase: "abierta", queda: Math.max(0, cierra - ahora) }
+                       : { fase: "cerrada", queda: Math.max(0, cerrada + DEMO_REVEAL_MS - ahora) };
+      });
+      res.json(fuera);
+    } catch (e) {
+      console.error("demo:", e);
+      res.status(500).json({ error: "demo" });
+    }
+  },
+);

@@ -309,6 +309,7 @@ export const shareLink = onRequest(
 // ═══════════════════════════════════════════════════════════════════════════
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { createHash } from "node:crypto";
 import { randomUUID, timingSafeEqual } from "node:crypto";
 
 const FOTOS_BUCKET = "idoctormusicband.firebasestorage.app";
@@ -841,10 +842,133 @@ function demoSorteo(pesos) {
   return pesos.length - 1;
 }
 
+// ── LA BANDA DE DEMOSTRACIÓN DENTRO DE LA APP (28-10-2026) ──────────────────
+// La app deja «Ver la demo» sin cuenta: entra como ESPECTADOR en esta misma
+// banda (DEMO_BANDA) con unas credenciales públicas, por el acceso de músico
+// de siempre (`groups/{id}` + `groupAuth`). Aquí se SIEMBRA lo que ve:
+//   · el doc de la banda y la ficha del miembro «Invitado» (viewer),
+//   · las canciones propias de Juan que él elija (se COPIAN de su banda por
+//     el título; nunca se tocan las originales) y la canción de bienvenida de
+//     la app (trae sus pistas demo empaquetadas, así el Show suena),
+//   · un setlist con ellas, y un ensayo y un concierto en la agenda.
+// Se ejecuta con `POST /api/demo?op=seed&clave=…` (DEMO_KEY, en el .env) y es
+// idempotente: se puede volver a lanzar cuando Juan termine una canción.
+const DEMO_FUENTE = "7sOz3LnqNGOEuLLyDGwMLCprXcy1";       // El Sótano del Doctor (única fuente admitida)
+const DEMO_TITULOS = ["Qué más da", "Una semana"];
+const DEMO_MIEMBRO = { nombre: "Invitado", clave: "demo" };
+const normTitulo = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const slug = s => normTitulo(s).replace(/ /g, "-").slice(0, 40);
+// Mismo hash que GroupsManager.hash en la app: SHA-256("iDoctorMusicBand::" + clave).
+const hashClaveApp = p => createHash("sha256").update("iDoctorMusicBand::" + p, "utf8").digest("hex");
+// Mismo id que GroupsManager.memberDocId(bandName:memberName:) en la app.
+const sanitizeApp = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+  .replace(/[^a-z0-9\-_]/g, "-").replace(/^-+|-+$/g, "").slice(0, 64);
+
+function cancionBienvenida() {
+  return {
+    id: "cancion-bienvenida-idoctor", title: "Bienvenido a iDoctor MusicBand", artist: "Tutorial de la app",
+    keyOriginal: "F#m", keyPlay: "", bpm: 100, meter: 4, subdivision: 1, durationSecs: 39, capo: "2", capoFret: 2,
+    guitar: "", liveFlag: "green", tags: "tutorial", songType: "", state: "Activa", readiness: "Lista para directo",
+    concertType: "", pollWins: 0, videoSlot: 0, videoEnabled: false, vocal: "", twoColumns: false, columnBreak: 0,
+    lyricsFormat: "", lyricsHtml: "", lyricsRight: "", linkAudio: "", linkPdf: "", linkYouTube: "", midiPresetIds: [],
+    notesTech: "", externalSource: "demo", externalId: "",
+    notesMusic: "Canción de ejemplo con pistas demo sintetizadas (batería, bajo, teclas y click guía). Ábrela en VER EN DIRECTO para probar los gestos que cuenta la letra.",
+    chords: "Progresión completa: Em  C  G  D\nCon la cejilla en el 2º traste suena: F#m  D  A  E\n\nEm: 022000    C: x32010    G: 320003    D: xx0232\n\nLos stems demo van a 100 BPM en Fa sostenido menor,\nla misma tonalidad que produce la cejilla.",
+    lyrics: [
+      "[Intro]", "Em  C  G  D", "",
+      "[Estrofa 1]", "Em                          C", "Bienvenido a tu nuevo directo,", "G                        D", "esta guía se lee y se toca.",
+      "Em                            C", "Toca el borde derecho y avanzas,", "G                          D", "el izquierdo te lleva atrás.", "",
+      "[Preestribillo]", "Em                      C", "Junta dos dedos sobre la letra:", "G                            D", "el tamaño crece y baja contigo.", "",
+      "[Estribillo]", "Em                        C", "Doble toque: arranca el autoscroll,", "G                       D", "la canción camina sola.",
+      "Em                          C", "Pulsa Pistas y suena la banda:", "G                            D", "mezcla, click y voz de órdenes.", "",
+      "[Estrofa 2]", "Em                          C", "La cejilla está en el traste dos,", "G                                D", "por eso ves posturas de Mi menor.",
+      "Em                        C", "Con el lápiz haces anotaciones,", "G                              D", "y en el menú eliges tu vista.", "",
+      "[Final]", "Em                        C", "Cuando ya no necesites la guía,", "G                    D            Em", "borra esta canción... y a tocar.",
+    ].join("\n"),
+  };
+}
+
+async function demoSeed(titulos) {
+  const banda = db.doc(`bands/${DEMO_BANDA}`);
+  const ahora = Timestamp.now();
+  const informe = { copiadas: [], noEncontradas: [] };
+  // 1) El doc de la banda (merge: no pisa lo que ya tenga).
+  await banda.set({
+    id: DEMO_BANDA, ownerUid: DEMO_BANDA, ownerEmail: "", name: DEMO_PERFIL.bandName, demo: true,
+    subscriptionStatus: "lifetime", subscriptionPlan: "lifetime", subscriptionExpiresAt: null, isLifetime: true,
+    lastActiveAt: ahora, createdAt: ahora,
+  }, { merge: true });
+  // 2) La ficha del miembro público (espectador: solo lectura).
+  const groupId = sanitizeApp(DEMO_PERFIL.bandName) + "__" + sanitizeApp(DEMO_MIEMBRO.nombre);
+  await db.doc(`groups/${groupId}`).set({
+    id: groupId, name: DEMO_MIEMBRO.nombre, passwordHash: hashClaveApp(DEMO_MIEMBRO.clave), bandId: DEMO_BANDA,
+    ownerEmail: "", createdAt: ahora, role: "", access: "viewer", bandName: DEMO_PERFIL.bandName, memberEmail: "",
+  }, { merge: true });
+  // 3) Las canciones: las de Juan (copiadas por título) y la de bienvenida.
+  const fuente = await db.collection(`bands/${DEMO_FUENTE}/songs`).get();
+  const porTitulo = new Map();
+  fuente.docs.forEach(d => { const x = d.data(); if (!x.deletedAt) porTitulo.set(normTitulo(x.title), x); });
+  const songIds = [];
+  for (const t of titulos) {
+    const x = porTitulo.get(normTitulo(t));
+    if (!x) { informe.noEncontradas.push(t); continue; }
+    const id = "demo-" + slug(x.title);
+    const copia = { ...x, id, deletedAt: null, pollWins: 0, videoSlot: 0, videoEnabled: false, midiPresetIds: [],
+                    annotationData: null, annotationUrl: "", externalSource: "demo", externalId: "", updatedAt: ahora };
+    delete copia.annotationData;
+    await banda.collection("songs").doc(id).set(copia);
+    songIds.push(id); informe.copiadas.push(x.title);
+  }
+  const bienvenida = cancionBienvenida();
+  await banda.collection("songs").doc(bienvenida.id).set({ ...bienvenida, createdAt: ahora, updatedAt: ahora }, { merge: true });
+  songIds.push(bienvenida.id);
+  // 4) El setlist (mismo id que usa la demo del Concierto Interactivo) y sus filas.
+  await banda.collection("setlists").doc(DEMO_SETLIST).set({
+    id: DEMO_SETLIST, name: "Setlist de demostración", concertDate: null, notes: "Prueba el Show: letra, autoscroll, pistas y acordes.",
+    location: "", bandHelperUrl: "", bandHelperAutoSync: false, externalSource: "demo", externalId: "", isFavorite: true,
+    concertType: "", smartFilter: null, pollPoolId: null, hiddenFor: [], createdAt: ahora, updatedAt: ahora,
+  }, { merge: true });
+  const viejas = await banda.collection("setlist_items").where("setlistId", "==", DEMO_SETLIST).get();
+  for (const d of viejas.docs) await d.ref.delete();
+  for (let i = 0; i < songIds.length; i++) {
+    const id = `demo-item-${i + 1}`;
+    await banda.collection("setlist_items").doc(id).set({
+      id, setlistId: DEMO_SETLIST, order: i, itemType: "song", songId: songIds[i], note: "", label: "",
+      opensVote: false, linkedToNext: false, createdAt: ahora,
+    });
+  }
+  // 5) La agenda: un ensayo la semana que viene y un bolo dentro de tres.
+  const dia = n => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return Timestamp.fromDate(d); };
+  await banda.collection("rehearsals").doc("demo-ensayo").set({
+    id: "demo-ensayo", date: dia(7), time: "20:00", place: "Local de ensayo", address: "", mapsUrl: "",
+    goals: "Repasar el setlist de demostración", notes: "", durationMins: 120, setlistId: DEMO_SETLIST,
+    createdAt: ahora, externalSource: "demo", externalId: "", hiddenFor: [], deletedAt: null,
+  }, { merge: true });
+  await banda.collection("concerts").doc("demo-bolo").set({
+    id: "demo-bolo", name: "Concierto de demostración", category: "", venue: "Sala de pruebas", city: "Tu ciudad", address: "", mapsUrl: "",
+    date: dia(21), endDate: null, timeStart: "22:00", timeEnd: "", timeArrival: "19:00", timeSetup: "19:30", timeSound: "20:30", timeShow: "22:00",
+    promoter: "", cache: "", notes: "Con votación del público (Concierto Interactivo).", status: "Confirmado", setlistId: DEMO_SETLIST,
+    checklist: [], createdAt: ahora, externalSource: "demo", externalId: "", hiddenFor: [], deletedAt: null,
+  }, { merge: true });
+  informe.setlist = songIds.length; informe.miembro = groupId;
+  return informe;
+}
+
 export const demo = onRequest(
-  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 20, maxInstances: 3, cors: false },
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 60, maxInstances: 3, cors: false },
   async (req, res) => {
     res.set("Cache-Control", "no-store");
+    // Siembra de la banda de demostración (con clave; nunca por GET).
+    if (req.method === "POST" && String(req.query.op || "") === "seed") {
+      const clave = String(req.query.clave || ""), buena = process.env.DEMO_KEY || "";
+      if (!buena || clave.length !== buena.length || !fotosEq(clave, buena)) { res.status(401).json({ error: "clave" }); return; }
+      const titulos = String(req.query.titulos || "").split(",").map(s => s.trim()).filter(Boolean);
+      try {
+        const informe = await demoSeed(titulos.length ? titulos : DEMO_TITULOS);
+        res.json({ ok: true, ...informe });
+      } catch (e) { console.error("demo seed:", e); res.status(500).json({ error: String(e.message || e) }); }
+      return;
+    }
     if (req.method !== "GET") { res.status(405).send(""); return; }
     const banda = db.doc(`bands/${DEMO_BANDA}`);
     const perfilRef = banda.collection("publicLive").doc("current");

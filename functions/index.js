@@ -309,8 +309,7 @@ export const shareLink = onRequest(
 // ═══════════════════════════════════════════════════════════════════════════
 import { getStorage } from "firebase-admin/storage";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import { createHash } from "node:crypto";
-import { randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 
 const FOTOS_BUCKET = "idoctormusicband.firebasestorage.app";
 const FOTOS_MAX_BYTES = 1.5 * 1024 * 1024;      // tras reducir en el móvil quedan ~150-400 KB
@@ -1048,3 +1047,60 @@ export const demo = onRequest(
     }
   },
 );
+
+// ─────────────────────────────────────────────────────────────────────────
+// COMUNIDAD · BOLETÍN (01-11-2026, plan de visibilidad, punto 3)
+// POST /api/comunidad {email, nombre?, lang?, source?} desde la página
+// /comunidad. Guarda el alta en `newsletter/{sha256(email)}` con la hora del
+// consentimiento (RGPD: quién, cuándo, desde dónde) y, si Brevo está
+// configurado (env BREVO_API_KEY + BREVO_LIST_ID), crea el contacto con
+// DOBLE confirmación (BREVO_DOI_TEMPLATE_ID + BREVO_DOI_REDIRECT) o, sin
+// plantilla, como contacto normal. Sin Brevo el alta queda «pending» y se
+// exporta a mano. Nunca devuelve datos de otros; nunca por GET.
+const NEWSLETTER_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+export const comunidad = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 20, maxInstances: 3, cors: false },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    if (req.method !== "POST") { res.status(405).send(""); return; }
+    const b = (req.body && typeof req.body === "object") ? req.body : {};
+    const email = String(b.email || "").trim().toLowerCase();
+    if (!NEWSLETTER_EMAIL_RE.test(email) || email.length > 120) { res.status(400).json({ error: "email" }); return; }
+    const nombre = String(b.nombre || "").trim().slice(0, 80);
+    const lang = String(b.lang || "es").toLowerCase().startsWith("en") ? "en" : "es";
+    const source = String(b.source || "web").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "web";
+    const id = createHash("sha256").update(email).digest("hex");
+    const ref = db.doc(`newsletter/${id}`);
+    const now = Timestamp.now();
+    try {
+      const prev = await ref.get();
+      await ref.set({
+        email, nombre, lang, source,
+        consentAt: now, consentIp: String(req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim().slice(0, 64),
+        status: prev.exists ? (prev.data()?.status || "pending") : "pending",
+        createdAt: prev.exists ? (prev.data()?.createdAt || now) : now, updatedAt: now,
+      }, { merge: true });
+    } catch (e) { console.error("comunidad: firestore", e); res.status(500).json({ error: "store" }); return; }
+
+    const apiKey = process.env.BREVO_API_KEY || "", listId = Number(process.env.BREVO_LIST_ID || 0);
+    if (apiKey && listId) {
+      try {
+        const templateId = Number(process.env.BREVO_DOI_TEMPLATE_ID || 0);
+        const redirect = process.env.BREVO_DOI_REDIRECT || "https://idoctormusicband.web.app/comunidad/?ok=1";
+        const attributes = { NOMBRE: nombre, IDIOMA: lang, ORIGEN: source };
+        const r = templateId
+          ? await fetch("https://api.brevo.com/v3/contacts/doubleOptinConfirmation", {
+              method: "POST", headers: { "api-key": apiKey, "Content-Type": "application/json", accept: "application/json" },
+              body: JSON.stringify({ email, includeListIds: [listId], templateId, redirectionUrl: redirect, attributes }) })
+          : await fetch("https://api.brevo.com/v3/contacts", {
+              method: "POST", headers: { "api-key": apiKey, "Content-Type": "application/json", accept: "application/json" },
+              body: JSON.stringify({ email, listIds: [listId], updateEnabled: true, attributes }) });
+        if (r.ok || r.status === 204 || r.status === 201) {
+          await ref.set({ status: templateId ? "doi-sent" : "brevo", brevoAt: Timestamp.now() }, { merge: true });
+        } else {
+          console.error("comunidad: brevo", r.status, (await r.text()).slice(0, 200));
+        }
+      } catch (e) { console.error("comunidad: brevo", e); }
+    }
+    res.json({ ok: true });
+  });

@@ -1104,3 +1104,158 @@ export const comunidad = onRequest(
     }
     res.json({ ok: true });
   });
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  VOTA EL SETLIST DE NAVIDAD (04-11-2026) — votación GLOBAL de campaña.
+//
+//  Cualquiera, sin cuenta y sin app, elige hasta NAV_MAX_ELEGIDAS canciones de
+//  una lista de candidatas; al cerrar, las más votadas son «el setlist de
+//  Navidad» que cualquier banda puede importar en iDoctor MusicBand.
+//
+//  · Va TODO por esta función (admin SDK): las reglas de Firestore no se tocan
+//    y `globalPolls/**` no lo puede leer ni escribir nadie desde fuera.
+//  · No se pisa con las votaciones de bolo: aquellas viven en
+//    `bands/{b}/setlists/{s}/livePoll`, esto en `globalPolls/{poll}`.
+//  · Un voto por móvil: el documento es `votos/{sha256(device)}` y se puede
+//    cambiar mientras esté abierta. Sin datos personales (ni IP guardada).
+//  · El recuento son agregaciones `count()` por canción (array-contains), con
+//    caché de unos segundos por instancia: escala a miles sin documento
+//    caliente.
+//  · Fases por fecha (abre/cierra en el doc de configuración), así no hay que
+//    acordarse de abrir ni cerrar.
+//
+//    GET  /api/navidad?poll=navidad2026[&device=…]   → estado, candidatas, recuento, mis votos
+//    POST /api/navidad {op:"votar", poll, device, songs:[ids]}
+//    POST /api/navidad {op:"config", poll, clave, abre, cierra, candidatas?, titulo?}  (NAVIDAD_KEY)
+//    POST /api/navidad {op:"borrar-votos", poll, clave}   (solo la encuesta de prueba)
+// ═══════════════════════════════════════════════════════════════════════════
+const NAV_POLLS = new Set(["navidad2026", "prueba"]);      // nada fuera de esta lista
+const NAV_MAX_ELEGIDAS = 5;
+const NAV_CACHE_MS = 8_000;
+const NAV_RATE = new Map();                                 // ip → [instantes] (por instancia)
+const NAV_CANDIDATAS = [
+  ["Feliz Navidad", "José Feliciano"], ["Un año más", "Mecano"], ["El tamborilero", "Raphael"],
+  ["Arre borriquito", "Peret"], ["Mi burrito sabanero", "Tradicional venezolano"], ["Campana sobre campana", "Tradicional"],
+  ["Los peces en el río", "Tradicional"], ["La marimorena", "Tradicional"], ["Hacia Belén va una burra", "Tradicional"],
+  ["Noche de paz", "Tradicional"], ["Dime niño de quién eres", "Tradicional"], ["Los campanilleros", "Tradicional andaluz"],
+  ["Fum, fum, fum", "Tradicional catalán"],
+  ["All I Want for Christmas Is You", "Mariah Carey"], ["Last Christmas", "Wham!"], ["Jingle Bell Rock", "Bobby Helms"],
+  ["Rockin' Around the Christmas Tree", "Brenda Lee"], ["Santa Claus Is Comin' to Town", "Bruce Springsteen"],
+  ["Merry Christmas Everyone", "Shakin' Stevens"], ["Happy Xmas (War Is Over)", "John Lennon & Yoko Ono"],
+  ["Driving Home for Christmas", "Chris Rea"], ["Let It Snow! Let It Snow! Let It Snow!", "Dean Martin"],
+  ["It's Beginning to Look a Lot Like Christmas", "Michael Bublé"], ["Run Rudolph Run", "Chuck Berry"],
+  ["Wonderful Christmastime", "Paul McCartney"], ["Do They Know It's Christmas?", "Band Aid"],
+  ["Merry Xmas Everybody", "Slade"], ["Fairytale of New York", "The Pogues & Kirsty MacColl"],
+  ["Blue Christmas", "Elvis Presley"], ["White Christmas", "Bing Crosby"],
+].map(([title, artist], i) => ({ id: "n" + String(i + 1).padStart(2, "0"), title, artist }));
+const navCache = new Map();                                 // poll → {t, data}
+
+function navRateOk(req) {
+  const ip = String(req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim() || "?";
+  const ahora = Date.now(), win = 60_000;
+  const xs = (NAV_RATE.get(ip) || []).filter(t => ahora - t < win);
+  if (xs.length >= 30) { NAV_RATE.set(ip, xs); return false; }   // 30 votos/min por IP (un bar entero cabe)
+  xs.push(ahora); NAV_RATE.set(ip, xs);
+  if (NAV_RATE.size > 5000) NAV_RATE.clear();
+  return true;
+}
+const navMs = t => (t && typeof t.toMillis === "function") ? t.toMillis() : (typeof t === "number" ? t : null);
+function navFase(cfg, ahora = Date.now()) {
+  const abre = navMs(cfg.abre), cierra = navMs(cfg.cierra);
+  if (abre && ahora < abre) return "antes";
+  if (cierra && ahora >= cierra) return "cerrada";
+  return "abierta";
+}
+
+async function navEstado(poll) {
+  const c = navCache.get(poll);
+  if (c && Date.now() - c.t < NAV_CACHE_MS) return c.data;
+  const ref = db.doc(`globalPolls/${poll}`);
+  const snap = await ref.get();
+  if (!snap.exists) return null;
+  const cfg = snap.data();
+  const cands = Array.isArray(cfg.candidatas) && cfg.candidatas.length ? cfg.candidatas : NAV_CANDIDATAS;
+  const votos = ref.collection("votos");
+  const [total, ...cuentas] = await Promise.all([
+    votos.count().get().then(s => s.data().count).catch(() => 0),
+    ...cands.map(s => votos.where("songs", "array-contains", s.id).count().get().then(x => x.data().count).catch(() => 0)),
+  ]);
+  const data = {
+    poll, titulo: cfg.titulo || "Vota el setlist de Navidad",
+    fase: navFase(cfg), abre: navMs(cfg.abre), cierra: navMs(cfg.cierra), max: NAV_MAX_ELEGIDAS,
+    votantes: total,
+    candidatas: cands.map((s, i) => ({ id: s.id, title: s.title, artist: s.artist || "", votos: cuentas[i] || 0 })),
+  };
+  navCache.set(poll, { t: Date.now(), data });
+  return data;
+}
+
+export const navidad = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 30, maxInstances: 10, cors: false },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const b = (req.method === "POST" && req.body && typeof req.body === "object") ? req.body : {};
+    const poll = String((req.method === "GET" ? req.query.poll : b.poll) || "navidad2026");
+    if (!NAV_POLLS.has(poll)) { res.status(404).json({ error: "poll" }); return; }
+    const ref = db.doc(`globalPolls/${poll}`);
+    const deviceId = d => /^[A-Za-z0-9_-]{8,80}$/.test(String(d || "")) ? createHash("sha256").update(String(d)).digest("hex") : null;
+    try {
+      if (req.method === "GET") {
+        const est = await navEstado(poll);
+        if (!est) { res.status(404).json({ error: "sin-config" }); return; }
+        let mios = [];
+        const dev = deviceId(req.query.device);
+        if (dev) { const v = await ref.collection("votos").doc(dev).get(); mios = v.exists ? (v.data().songs || []) : []; }
+        res.json({ ...est, mios });
+        return;
+      }
+      if (req.method !== "POST") { res.status(405).send(""); return; }
+
+      if (b.op === "votar") {
+        if (!navRateOk(req)) { res.status(429).json({ error: "despacio" }); return; }
+        const dev = deviceId(b.device);
+        if (!dev) { res.status(400).json({ error: "device" }); return; }
+        const snap = await ref.get();
+        if (!snap.exists) { res.status(404).json({ error: "sin-config" }); return; }
+        const cfg = snap.data();
+        if (navFase(cfg) !== "abierta") { res.status(409).json({ error: "cerrada", fase: navFase(cfg) }); return; }
+        const validas = new Set((Array.isArray(cfg.candidatas) && cfg.candidatas.length ? cfg.candidatas : NAV_CANDIDATAS).map(s => s.id));
+        const songs = [...new Set((Array.isArray(b.songs) ? b.songs : []).map(String))].filter(id => validas.has(id));
+        if (songs.length > NAV_MAX_ELEGIDAS) { res.status(400).json({ error: "demasiadas", max: NAV_MAX_ELEGIDAS }); return; }
+        const vref = ref.collection("votos").doc(dev);
+        if (!songs.length) await vref.delete();                       // quitar todas = retirar el voto
+        else await vref.set({ songs, at: Timestamp.now() });
+        navCache.delete(poll);
+        res.json({ ok: true, mios: songs });
+        return;
+      }
+
+      if (b.op === "config" || b.op === "borrar-votos") {
+        const clave = String(b.clave || ""), buena = process.env.NAVIDAD_KEY || "";
+        if (!buena || !fotosEq(clave, buena)) { res.status(401).json({ error: "clave" }); return; }
+        if (b.op === "borrar-votos") {
+          if (poll !== "prueba") { res.status(403).json({ error: "solo-prueba" }); return; }
+          const vs = await ref.collection("votos").listDocuments();
+          for (const d of vs) await d.delete();
+          navCache.delete(poll);
+          res.json({ ok: true, borrados: vs.length });
+          return;
+        }
+        const fecha = v => { const t = Date.parse(String(v || "")); return Number.isFinite(t) ? Timestamp.fromMillis(t) : null; };
+        const cambio = { updatedAt: Timestamp.now() };
+        if (b.abre !== undefined) cambio.abre = fecha(b.abre);
+        if (b.cierra !== undefined) cambio.cierra = fecha(b.cierra);
+        if (typeof b.titulo === "string") cambio.titulo = b.titulo.slice(0, 80);
+        const prev = await ref.get();
+        if (!prev.exists || b.candidatas === "defecto") cambio.candidatas = NAV_CANDIDATAS;
+        await ref.set(cambio, { merge: true });
+        navCache.delete(poll);
+        res.json({ ok: true, ...(await navEstado(poll)) });
+        return;
+      }
+      res.status(400).json({ error: "op" });
+    } catch (e) {
+      console.error("navidad:", e);
+      res.status(500).json({ error: "interno" });
+    }
+  });

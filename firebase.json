@@ -8,6 +8,7 @@
       { "source": "/vota/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
       { "source": "/en-vivo/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
       { "source": "/pantalla/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
+      { "source": "/elige/**", "function": { "functionId": "shareLink", "region": "europe-west1" } },
       { "source": "/og-card/**", "function": { "functionId": "shareLink", "region": "europe-west1" } }
     ]
   },

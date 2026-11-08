@@ -66,6 +66,17 @@ const KINDS = {
     target: (id) => `${CONCERT_BASE}/pantalla/?banda=${enc(id)}`,
     glyph: "▶",
   },
+  // ELIGE EL REPERTORIO (08-11-2026): la votación de campaña de la banda,
+  // abierta días antes de un concierto y publicada en redes. Un enlace fijo
+  // por banda: la página enseña la campaña que esté abierta (o la última).
+  elige: {
+    kicker: "ELIGE EL REPERTORIO",
+    title: (b) => `${b} · Elige el repertorio del próximo concierto`,
+    headline: "Vota los temas que quieres oír en el próximo concierto",
+    desc: "Elige tus canciones favoritas desde el móvil; las más votadas entran en el repertorio. Sin app, sin registro, sin datos personales.",
+    target: (id) => `${CONCERT_BASE}/elige/?banda=${enc(id)}`,
+    glyph: "★",
+  },
 };
 
 const enc = encodeURIComponent;
@@ -86,10 +97,24 @@ async function loadBand(bandId) {
   return data;
 }
 
-function resolveAlias(alias = "") {
+// ALIAS AUTOMÁTICOS (08-11-2026, build 216): además del JSON, la app registra
+// el alias de cada banda en `aliases/{slug}` (BandAlias.swift). Se mira el JSON,
+// luego Firestore (con caché de un minuto) y, si nada, el bandId tal cual.
+const aliasCache = new Map();
+async function resolveAlias(alias = "") {
   const a = String(alias).trim().toLowerCase().replace(/\.jpg$/, "");
   if (!a) return null;
   if (ALIASES[a]) return { alias: a, bandId: ALIASES[a] };
+  if (/^[a-z0-9]{3,32}$/.test(a)) {
+    const hit = aliasCache.get(a);
+    let bid = hit && Date.now() - hit.at < 60_000 ? hit.bandId : null;
+    if (bid === null) {
+      const snap = await db.doc(`aliases/${a}`).get().catch(() => null);
+      bid = snap && snap.exists ? String(snap.get("bandId") || "") : "";
+      aliasCache.set(a, { at: Date.now(), bandId: bid });
+    }
+    if (/^[A-Za-z0-9_-]{6,64}$/.test(bid)) return { alias: a, bandId: bid };
+  }
   // Sin alias registrado: se acepta el bandId tal cual (para cualquier banda).
   const raw = String(alias).trim().replace(/\.jpg$/, "");
   return /^[A-Za-z0-9_-]{6,64}$/.test(raw) ? { alias: raw, bandId: raw } : null;
@@ -235,9 +260,9 @@ export const shareLink = onRequest(
     try {
       const path = req.path.replace(/\/+$/, "");
       // /og-card/<kind>/<alias>.jpg
-      let m = path.match(/^\/og-card\/(vota|en-vivo|pantalla)\/([^/]+?)(?:\.jpg)?$/);
+      let m = path.match(/^\/og-card\/(vota|en-vivo|pantalla|elige)\/([^/]+?)(?:\.jpg)?$/);
       if (m) {
-        const kind = m[1], r = resolveAlias(m[2]);
+        const kind = m[1], r = await resolveAlias(m[2]);
         const band = r ? await loadBand(r.bandId) : null;
         const buf = await renderCard(kind, band || { bandName: "", logoUrl: "" });
         res.set("Content-Type", "image/jpeg");
@@ -245,9 +270,9 @@ export const shareLink = onRequest(
         return res.status(200).send(buf);
       }
       // /<kind>/<alias>
-      m = path.match(/^\/(vota|en-vivo|pantalla)\/([^/]+)$/);
+      m = path.match(/^\/(vota|en-vivo|pantalla|elige)\/([^/]+)$/);
       if (!m) return res.status(404).send("Not found");
-      const kind = m[1], r = resolveAlias(m[2]);
+      const kind = m[1], r = await resolveAlias(m[2]);
       if (!r) return res.status(404).send("Enlace no válido");
       const band = await loadBand(r.bandId);
       if (!band) return res.status(404).send("Banda no encontrada");
@@ -257,7 +282,10 @@ export const shareLink = onRequest(
       // que esté en escena, y así un enlace corto guardado o impreso no puede
       // quedarse enganchado a la votación vieja de un bolo pasado. Un
       // `?setlist=` heredado de enlaces antiguos se ignora sin romperlos.
-      const target = KINDS[kind].target(r.bandId);
+      let target = KINDS[kind].target(r.bandId);
+      // Votación en la web: cada cajón web tiene su enlace (`?poll=`); sin él,
+      // la página enseña la abierta. Solo para /elige: los demás, sin nada.
+      if (kind === "elige" && /^[A-Za-z0-9_-]{1,40}$/.test(String(req.query.poll || ""))) target += "&poll=" + enc(String(req.query.poll));
       const ua = req.get("user-agent") || "";
       const wantsPreview = BOT_RE.test(ua) || req.query.preview === "1";
       // NO cachear en la CDN: la misma URL responde distinto a robots (HTML
@@ -1256,6 +1284,216 @@ export const navidad = onRequest(
       res.status(400).json({ error: "op" });
     } catch (e) {
       console.error("navidad:", e);
+      res.status(500).json({ error: "interno" });
+    }
+  });
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ELIGE EL REPERTORIO (08-11-2026; desde la build 216, CAJONES WEB) —
+//  votación de CAMPAÑA de una banda. Lo pidió Juan el 05-11: «dejar una
+//  votación abierta con unos temas durante 15 días antes de un concierto».
+//
+//  · La votación ES un cajón de la app (`bands/{banda}/pollPools/{id}` con
+//    `web == true`): título público, concierto, abre/cierra, cuántos temas
+//    por persona (`webMax`, 1 a 3), recuento visible o al cierre
+//    (`webLiveCount`) y las candidatas CONGELADAS (`webCandidates`). Se crea,
+//    se cierra y se lee desde la app; aquí ya no hay configuración a mano.
+//  · Los votos van a `bands/{banda}/campaigns/{cajón}/votos/{sha256(móvil)}`,
+//    un nivel más abajo de lo que las reglas abren a la banda: solo esta
+//    función los lee. El RECUENTO agregado queda en `campaigns/{cajón}`
+//    ({recuento: {songId: n}, votantes}), que la app sí lee con sus reglas.
+//  · Un enlace FIJO por banda (/elige/?banda=… o idoctormusic.com/elige/
+//    <alias>): sin `poll`, la página enseña la votación abierta; si hay
+//    varias abiertas (hasta 3), la lista para elegir; si ninguna, la próxima
+//    programada o la última cerrada hace menos de 30 días. Con `poll`, esa.
+//  · Todo por el SDK de administrador: NI una regla de Firestore nueva para
+//    el público. Las votaciones de BOLO (/votar, /pantalla) no se tocan.
+//
+//    GET  /api/elige?banda=…[&poll=…][&device=…]  → estado, perfil, candidatas, recuento, mis votos
+//    POST /api/elige {op:"votar", banda, poll, device, songs:[ids]}
+//    POST /api/elige {op:"listar", banda, clave}
+//    POST /api/elige {op:"borrar-votos", banda, poll, clave}   (pruebas)
+// ═══════════════════════════════════════════════════════════════════════════
+const ELIGE_CACHE_MS = 8_000;
+const ELIGE_DIAS_VISIBLE = 30;
+const eligeCache = new Map();                               // `${banda}|${poll}` → {t, data}
+const eligeMax = v => { const m = parseInt(v, 10); return m >= 1 && m <= 3 ? m : 3; };
+const eligeId = s => /^[A-Za-z0-9_-]{1,40}$/.test(String(s || ""));
+const eligeCfg = d => ({ abre: d.webOpens || null, cierra: d.webCloses || null });
+
+function eligeResumen(id, d, ahora = Date.now()) {
+  return {
+    poll: id,
+    titulo: String(d.webTitle || "").trim().slice(0, 80) || "Elige el repertorio",
+    concierto: String(d.webConcertName || "").slice(0, 80),
+    fase: navFase(eligeCfg(d), ahora), abre: navMs(d.webOpens), cierra: navMs(d.webCloses),
+    max: eligeMax(d.webMax), recuento: d.webLiveCount === false ? "cierre" : "directo",
+    candidatas: Array.isArray(d.webCandidates) ? d.webCandidates.length : 0,
+  };
+}
+
+/// Los cajones web de la banda que tienen algo que enseñar, por cierre.
+async function eligeCajones(banda) {
+  const q = await db.collection(`bands/${banda}/pollPools`).where("web", "==", true).get();
+  const ahora = Date.now(), lim = ahora - ELIGE_DIAS_VISIBLE * 86_400_000;
+  return q.docs.map(s => ({ id: s.id, d: s.data(), r: eligeResumen(s.id, s.data(), ahora) }))
+    .filter(x => x.r.cierra && x.r.candidatas > 0 && (x.r.fase !== "cerrada" || x.r.cierra >= lim))
+    .sort((a, b) => a.r.cierra - b.r.cierra);
+}
+
+/// Sin `poll`: la abierta; varias abiertas → la lista; si ninguna, la próxima
+/// programada; si tampoco, la última cerrada hace poco.
+function eligeElegir(lista) {
+  const abiertas = lista.filter(x => x.r.fase === "abierta");
+  if (abiertas.length === 1) return { una: abiertas[0] };
+  if (abiertas.length > 1) return { varias: abiertas };
+  const proximas = lista.filter(x => x.r.fase === "antes");
+  if (proximas.length) return { una: proximas[0] };
+  const cerradas = lista.filter(x => x.r.fase === "cerrada");
+  return cerradas.length ? { una: cerradas[cerradas.length - 1] } : null;
+}
+
+/// El perfil público de la banda (lo mismo que ve /votar): logo, nombre,
+/// mensajes de la sala de espera, redes y el alias del enlace corto.
+const ELIGE_REDES = ["instagram", "tiktok", "facebook", "spotify", "youtube", "website"];
+async function eligePerfil(banda) {
+  const snap = await db.doc(`bands/${banda}/publicLive/current`).get();
+  const p = snap.exists ? snap.data() : {};
+  const s = p.social && typeof p.social === "object" ? p.social : {};
+  const social = Object.fromEntries(ELIGE_REDES.filter(k => typeof s[k] === "string" && s[k].trim()).map(k => [k, s[k].trim().slice(0, 200)]));
+  return {
+    bandName: String(p.bandName || "").slice(0, 80), logoUrl: typeof p.logoUrl === "string" ? p.logoUrl : "",
+    alias: typeof p.alias === "string" ? p.alias : "",
+    messages: Array.isArray(p.messages) ? p.messages.filter(m => typeof m === "string" && m.trim()).slice(0, 40) : [],
+    social: Object.keys(social).length ? social : null,
+  };
+}
+
+function eligeEnlace(banda, perfil, poll) {
+  const alias = Object.keys(ALIASES).find(a => ALIASES[a] === banda) || perfil.alias || "";
+  const base = alias ? `${SITE}/elige/${enc(alias)}` : `${CONCERT_BASE}/elige/?banda=${enc(banda)}`;
+  if (!poll) return base;
+  return base + (alias ? "?" : "&") + "poll=" + enc(poll);
+}
+
+async function eligeEstado(banda, poll) {
+  const key = `${banda}|${poll || ""}`;
+  const c = eligeCache.get(key);
+  if (c && Date.now() - c.t < ELIGE_CACHE_MS) return c.data;
+  const perfil = await eligePerfil(banda);
+  const comun = { banda, bandName: perfil.bandName, logoUrl: perfil.logoUrl, messages: perfil.messages,
+                  social: perfil.social, enlace: eligeEnlace(banda, perfil, "") };
+  let una = null, varias = null;
+  if (poll) {
+    const snap = await db.doc(`bands/${banda}/pollPools/${poll}`).get();
+    if (snap.exists && snap.get("web") === true) una = { id: snap.id, d: snap.data(), r: eligeResumen(snap.id, snap.data()) };
+  } else {
+    const sel = eligeElegir(await eligeCajones(banda));
+    if (sel?.una) una = sel.una; else if (sel?.varias) varias = sel.varias;
+  }
+  let data;
+  if (varias) {
+    data = { ...comun, varias: varias.map(v => ({ ...v.r, enlace: eligeEnlace(banda, perfil, v.id) })) };
+  } else if (una) {
+    const cands = Array.isArray(una.d.webCandidates) ? una.d.webCandidates : [];
+    const verRecuento = una.r.recuento !== "cierre" || una.r.fase === "cerrada";
+    const agg = await db.doc(`bands/${banda}/campaigns/${una.id}`).get();
+    const rec = (agg.exists && agg.get("recuento")) || {};
+    const votantes = Math.max(0, parseInt(agg.exists ? agg.get("votantes") : 0, 10) || 0);
+    data = { ...comun, ...una.r, verRecuento, votantes, enlace: eligeEnlace(banda, perfil, una.id),
+      candidatas: cands
+        .map(s => ({ id: String(s.id || ""), title: String(s.title || "").slice(0, 80), artist: String(s.artist || "").slice(0, 80),
+                     votos: verRecuento ? Math.max(0, parseInt(rec[s.id], 10) || 0) : null }))
+        .filter(s => eligeId(s.id) && s.title) };
+  } else {
+    data = { ...comun, ninguna: true };                     // sin votación: la página sigue con la cara de la banda
+  }
+  eligeCache.set(key, { t: Date.now(), data });
+  return data;
+}
+
+export const elige = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 30, maxInstances: 10, cors: false },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    const b = (req.method === "POST" && req.body && typeof req.body === "object") ? req.body : {};
+    const banda = String((req.method === "GET" ? req.query.banda : b.banda) || "");
+    if (!/^[A-Za-z0-9_-]{6,64}$/.test(banda)) { res.status(400).json({ error: "banda" }); return; }
+    const poll = String((req.method === "GET" ? req.query.poll : b.poll) || "");
+    if (poll && !eligeId(poll)) { res.status(400).json({ error: "poll" }); return; }
+    const deviceId = d => /^[A-Za-z0-9_-]{8,80}$/.test(String(d || "")) ? createHash("sha256").update(String(d)).digest("hex") : null;
+    const olvidar = p => { eligeCache.delete(`${banda}|`); eligeCache.delete(`${banda}|${p}`); };
+    try {
+      if (req.method === "GET") {
+        const est = await eligeEstado(banda, poll);
+        let mios = [];
+        const dev = deviceId(req.query.device);
+        if (dev && est.poll) {
+          const v = await db.doc(`bands/${banda}/campaigns/${est.poll}/votos/${dev}`).get();
+          mios = v.exists ? (v.data().songs || []) : [];
+        }
+        res.json({ ...est, mios });
+        return;
+      }
+      if (req.method !== "POST") { res.status(405).send(""); return; }
+
+      if (b.op === "votar") {
+        if (!navRateOk(req)) { res.status(429).json({ error: "despacio" }); return; }
+        const dev = deviceId(b.device);
+        if (!dev || !poll) { res.status(400).json({ error: "device" }); return; }
+        const snap = await db.doc(`bands/${banda}/pollPools/${poll}`).get();
+        if (!snap.exists || snap.get("web") !== true) { res.status(404).json({ error: "sin-campana" }); return; }
+        const d = snap.data();
+        const fase = navFase(eligeCfg(d));
+        if (fase !== "abierta") { res.status(409).json({ error: "cerrada", fase }); return; }
+        const validas = new Set((Array.isArray(d.webCandidates) ? d.webCandidates : []).map(s => String(s.id || "")));
+        const songs = [...new Set((Array.isArray(b.songs) ? b.songs : []).map(String))].filter(id => eligeId(id) && validas.has(id));
+        const max = eligeMax(d.webMax);
+        if (songs.length > max) { res.status(400).json({ error: "demasiadas", max }); return; }
+        // El recuento se lleva al día en una transacción: sin volver a contar
+        // nada, exacto aunque dos móviles voten a la vez.
+        const agg = db.doc(`bands/${banda}/campaigns/${poll}`);
+        const vref = agg.collection("votos").doc(dev);
+        await db.runTransaction(async tx => {
+          const prev = await tx.get(vref);
+          const antes = prev.exists ? (Array.isArray(prev.get("songs")) ? prev.get("songs") : []).map(String) : [];
+          const delta = {};
+          for (const id of antes) delta[id] = (delta[id] || 0) - 1;
+          for (const id of songs) delta[id] = (delta[id] || 0) + 1;
+          const recuento = {};
+          for (const [id, v] of Object.entries(delta)) if (v) recuento[id] = FieldValue.increment(v);
+          const upd = { poolId: poll, updatedAt: Timestamp.now() };
+          if (Object.keys(recuento).length) upd.recuento = recuento;
+          if (!prev.exists && songs.length) upd.votantes = FieldValue.increment(1);
+          if (prev.exists && !songs.length) upd.votantes = FieldValue.increment(-1);
+          tx.set(agg, upd, { merge: true });
+          if (songs.length) tx.set(vref, { songs, at: Timestamp.now() }); else tx.delete(vref);
+        });
+        olvidar(poll);
+        res.json({ ok: true, mios: songs });
+        return;
+      }
+
+      if (b.op === "listar" || b.op === "borrar-votos") {
+        const clave = String(b.clave || ""), buena = process.env.ELIGE_KEY || process.env.NAVIDAD_KEY || "";
+        if (!buena || !fotosEq(clave, buena)) { res.status(401).json({ error: "clave" }); return; }
+        if (b.op === "listar") {
+          const lista = await eligeCajones(banda);
+          res.json({ ok: true, votaciones: lista.map(x => x.r) });
+          return;
+        }
+        if (!poll) { res.status(400).json({ error: "poll" }); return; }
+        const agg = db.doc(`bands/${banda}/campaigns/${poll}`);
+        const vs = await agg.collection("votos").listDocuments();
+        for (const v of vs) await v.delete();
+        await agg.delete();
+        olvidar(poll);
+        res.json({ ok: true, borrados: vs.length });
+        return;
+      }
+      res.status(400).json({ error: "op" });
+    } catch (e) {
+      console.error("elige:", e);
       res.status(500).json({ error: "interno" });
     }
   });

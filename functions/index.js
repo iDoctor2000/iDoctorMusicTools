@@ -1497,3 +1497,51 @@ export const elige = onRequest(
       res.status(500).json({ error: "interno" });
     }
   });
+
+// ─────────────────────────────────────────────────────────────────────────
+// /api/videomap — EL MAPA DE VÍDEO PARA iDoctor MusicVideo (08-11-2026,
+// MusicBand build 220). Juan: «en el escenario no tengo MusicBand abierto en
+// el Mac; todo lo hago desde el iPad». El gestor crea en la app un ENLACE
+// SECRETO (clave aleatoria en `bands/{b}/videomap/current`, como la clave de
+// moderación de las fotos) y MusicVideo lo pide cuando quiere:
+//   GET /api/videomap?banda=<bandId>&k=<clave>
+// Devuelve EXACTAMENTE el mismo JSON que escribe la app en la carpeta
+// (`BandStemsFolderService.videoMapEntries`): version, exportedAt ISO-8601 y
+// songs[{id, title, slot, durationSeconds, bpm?, lyrics?}], al día desde
+// Firestore: vídeo encendido, franja 1…47, sin papelera, una canción por
+// franja (la primera por título). Clave mal o banda sin enlace → 404, sin
+// distinguir (no se confirma qué bandas existen). Solo lectura del mapa.
+const VIDEOMAP_ID = /^[A-Za-z0-9_-]{6,64}$/, VIDEOMAP_KEY = /^[A-Za-z0-9]{20,64}$/;
+export function videomapSongs(docs) {
+  const vistas = new Set();
+  return docs
+    .filter(x => !x.deletedAt && x.videoEnabled === true && Number.isInteger(x.videoSlot) && x.videoSlot >= 1 && x.videoSlot <= 47)
+    .map(x => ({ ...x, title: String(x.title || "") }))
+    .sort((a, b) => (a.videoSlot - b.videoSlot) || (a.title < b.title ? -1 : a.title > b.title ? 1 : 0))
+    .filter(x => { if (vistas.has(x.videoSlot)) return false; vistas.add(x.videoSlot); return true; })
+    .map(x => {
+      const e = { id: String(x.id || ""), title: x.title, slot: x.videoSlot, durationSeconds: Number(x.durationSecs) || 0 };
+      if (Number(x.bpm) > 0) e.bpm = Number(x.bpm);
+      const letra = String(x.lyrics || "").trim();
+      if (letra) e.lyrics = letra;
+      return e;
+    });
+}
+export const videomap = onRequest(
+  { region: "europe-west1", memory: "256MiB", timeoutSeconds: 20, maxInstances: 5, cors: false },
+  async (req, res) => {
+    res.set("Cache-Control", "no-store");
+    if (req.method !== "GET") { res.status(405).send(""); return; }
+    const banda = String(req.query.banda || ""), k = String(req.query.k || "");
+    if (!VIDEOMAP_ID.test(banda) || !VIDEOMAP_KEY.test(k)) { res.status(404).json({ error: "enlace" }); return; }
+    try {
+      const s = await db.doc(`bands/${banda}/videomap/current`).get();
+      if (!s.exists || !fotosEq(k, s.data()?.key || "")) { res.status(404).json({ error: "enlace" }); return; }
+      const q = await db.collection(`bands/${banda}/songs`).where("videoEnabled", "==", true).get();
+      const songs = videomapSongs(q.docs.map(d => ({ id: d.id, ...d.data() })));
+      res.json({ version: 1, exportedAt: new Date().toISOString(), songs });
+    } catch (e) {
+      console.error("videomap:", e);
+      res.status(500).json({ error: "interno" });
+    }
+  });
